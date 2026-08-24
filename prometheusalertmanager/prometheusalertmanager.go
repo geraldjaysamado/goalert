@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/target/goalert/alert"
 	"github.com/target/goalert/integrationkey"
+	"github.com/target/goalert/notification/slacktmpl"
 	"github.com/target/goalert/permission"
 	"github.com/target/goalert/retry"
 	"github.com/target/goalert/util/errutil"
@@ -82,75 +83,52 @@ import (
 ```
 */
 
-type postBody struct {
-	Status      string
-	ExternalURL string
+type postBody slacktmpl.AlertmanagerData
 
-	Alerts []postBodyAlert
-
-	CommonLabels struct {
-		Instance  string
-		AlertName string `json:"alertname"`
+func alertSummary(a slacktmpl.AlertmanagerAlert) string {
+	if a.Annotations["summary"] != "" {
+		return a.Annotations["summary"]
 	}
 
-	CommonAnnotations struct {
-		Summary string
-		Details string
-	}
+	return a.Labels["alertname"] + " " + a.Labels["instance"]
 }
-type postBodyAlert struct {
-	Labels struct {
-		AlertName string
-		Instance  string
-	}
-	Annotations struct {
-		Summary string
-		Details string
-	}
-	GeneratorURL string
-}
-
-func (a postBodyAlert) Summary() string {
-	if a.Annotations.Summary != "" {
-		return a.Annotations.Summary
-	}
-
-	return a.Labels.AlertName + " " + a.Labels.Instance
-}
-func (a postBodyAlert) gen() string {
+func alertGeneratorLink(a slacktmpl.AlertmanagerAlert) string {
 	if a.GeneratorURL == "" {
 		return ""
 	}
 
 	return fmt.Sprintf(" [View](%s)", a.GeneratorURL)
 }
-func (a postBodyAlert) Details() string {
-	if a.Annotations.Details != "" {
-		return a.Annotations.Details + a.gen()
+func alertDetails(a slacktmpl.AlertmanagerAlert) string {
+	if a.Annotations["details"] != "" {
+		return a.Annotations["details"] + alertGeneratorLink(a)
 	}
 
-	return a.Summary() + a.gen()
+	return alertSummary(a) + alertGeneratorLink(a)
 }
 func (b postBody) Summary() string {
-	if b.CommonAnnotations.Summary != "" {
-		return b.CommonAnnotations.Summary
+	if b.CommonAnnotations["summary"] != "" {
+		return b.CommonAnnotations["summary"]
 	}
-	if b.CommonLabels.AlertName == "" {
+	if b.CommonLabels["alertname"] == "" {
+		if len(b.Alerts) == 0 {
+			return "Prometheus Alertmanager alert"
+		}
 		// different alerts
-		return b.Alerts[0].Summary() + fmt.Sprintf(" and %d others", len(b.Alerts)-1)
+		return alertSummary(b.Alerts[0]) + fmt.Sprintf(" and %d others", len(b.Alerts)-1)
 	}
 
 	// we have a common alert name
-	if b.CommonLabels.Instance != "" {
-		return b.CommonLabels.AlertName + " " + b.CommonLabels.Instance
+	if b.CommonLabels["instance"] != "" {
+		return b.CommonLabels["alertname"] + " " + b.CommonLabels["instance"]
 	}
 
 	var instances []string
 	for _, a := range b.Alerts {
-		instances = append(instances, a.Labels.Instance)
+		instances = append(instances, a.Labels["instance"])
 	}
 
-	return b.CommonLabels.AlertName + " " + strings.Join(instances, ",")
+	return b.CommonLabels["alertname"] + " " + strings.Join(instances, ",")
 }
 
 func (b postBody) Details(payload string) string {
@@ -158,17 +136,28 @@ func (b postBody) Details(payload string) string {
 	if b.ExternalURL != "" {
 		fmt.Fprintf(&s, "[Prometheus Alertmanager UI](%s)\n\n", b.ExternalURL)
 	}
-	if b.CommonAnnotations.Details != "" {
-		s.WriteString(b.CommonAnnotations.Details + "\n\n")
+	if b.CommonAnnotations["details"] != "" {
+		s.WriteString(b.CommonAnnotations["details"] + "\n\n")
 	} else {
 		for _, a := range b.Alerts {
-			s.WriteString(a.Details() + "\n\n")
+			s.WriteString(alertDetails(a) + "\n\n")
 		}
 	}
 	if payload != "" {
 		fmt.Fprintf(&s, "## Payload\n\n```json\n%s\n```\n", payload)
 	}
 	return s.String()
+}
+
+func (b postBody) Metadata() (map[string]string, error) {
+	alertmanagerData := slacktmpl.AlertmanagerData(b)
+	data, err := json.Marshal(alertmanagerData)
+	if err != nil {
+		return nil, err
+	}
+	meta := slacktmpl.MergeMetadata(alertmanagerData)
+	meta[slacktmpl.MetadataKey] = string(data)
+	return meta, nil
 }
 
 func clientError(w http.ResponseWriter, code int, err error) bool {
@@ -229,9 +218,24 @@ func PrometheusAlertmanagerEventsAPI(aDB *alert.Store, intDB *integrationkey.Sto
 			ServiceID: serviceID,
 			Dedup:     alert.NewUserDedup(summary),
 		}
+		meta, metaErr := body.Metadata()
+		if metaErr != nil {
+			log.Log(ctx, errors.Wrap(metaErr, "encode prometheus alertmanager metadata"))
+			meta = nil
+		} else if metaErr = alert.ValidateMetadata(meta); metaErr != nil {
+			// Prefer keeping the flattened labels and annotations if only the full
+			// Alertmanager template payload pushes metadata over GoAlert's limit.
+			delete(meta, slacktmpl.MetadataKey)
+			if metaErr = alert.ValidateMetadata(meta); metaErr != nil {
+				// Metadata is supplemental. Preserve existing ingestion behavior for
+				// unusually large label or annotation sets instead of rejecting the alert.
+				log.Log(ctx, errors.Wrap(metaErr, "omit prometheus alertmanager metadata"))
+				meta = nil
+			}
+		}
 
 		err = retry.DoTemporaryError(func(int) error {
-			_, _, err = aDB.CreateOrUpdate(ctx, msg)
+			_, _, err = aDB.CreateOrUpdateWithMeta(ctx, msg, meta)
 			return err
 		},
 			retry.Log(ctx),

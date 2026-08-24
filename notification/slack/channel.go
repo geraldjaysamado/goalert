@@ -359,23 +359,45 @@ func (s *ChannelSender) loadChannels(ctx context.Context) ([]Channel, error) {
 }
 
 func alertLink(ctx context.Context, id int, summary string) string {
+	return alertLinkTitle(ctx, id, fmt.Sprintf("Alert #%d: %s", id, summary))
+}
+
+func alertLinkTitle(ctx context.Context, id int, title string) string {
 	cfg := config.FromContext(ctx)
 	path := fmt.Sprintf("/alerts/%d", id)
-	return fmt.Sprintf("<%s|Alert #%d: %s>", cfg.CallbackURL(path), id, slackutilsx.EscapeMessage(summary))
+	return fmt.Sprintf("<%s|%s>", cfg.CallbackURL(path), slackutilsx.EscapeMessage(title))
 }
 
 const (
-	alertResponseBlockID = "block_alert_response"
-	alertCloseActionID   = "action_alert_close"
-	alertAckActionID     = "action_alert_ack"
-	linkActActionID      = "action_link_account"
+	alertResponseBlockID   = "block_alert_response"
+	alertCloseActionID     = "action_alert_close"
+	alertAckActionID       = "action_alert_ack"
+	linkActActionID        = "action_link_account"
+	alertLinksBlockID      = "block_alert_links"
+	alertDashboardActionID = "action_alert_dashboard"
+	alertRunbookActionID   = "action_alert_runbook"
 )
 
 // alertMsgOption will return the slack.MsgOption for an alert-type message (e.g., notification or status update).
-func alertMsgOption(ctx context.Context, callbackID string, id int, summary, logEntry string, state notification.AlertState) slack.MsgOption {
+func alertMsgOption(ctx context.Context, callbackID string, id int, title, text string, buttons []alertTemplateButton, logEntry string, state notification.AlertState) slack.MsgOption {
 	blocks := []slack.Block{
 		slack.NewSectionBlock(
-			slack.NewTextBlockObject("mrkdwn", alertLink(ctx, id, summary), false, false), nil, nil),
+			slack.NewTextBlockObject("mrkdwn", alertLinkTitle(ctx, id, title), false, false), nil, nil),
+	}
+	if text != "" {
+		blocks = append(blocks, slack.NewSectionBlock(
+			slack.NewTextBlockObject("mrkdwn", text, false, false), nil, nil),
+		)
+	}
+	if len(buttons) > 0 {
+		elements := make([]slack.BlockElement, 0, len(buttons))
+		for _, button := range buttons {
+			element := slack.NewButtonBlockElement(button.ActionID, button.ActionID,
+				slack.NewTextBlockObject("plain_text", button.Label, false, false))
+			element.URL = button.URL
+			elements = append(elements, element)
+		}
+		blocks = append(blocks, slack.NewActionBlock(alertLinksBlockID, elements...))
 	}
 
 	var color string
@@ -413,7 +435,7 @@ func alertMsgOption(ctx context.Context, callbackID string, id int, summary, log
 	return slack.MsgOptionAttachments(
 		slack.Attachment{
 			Color:    color,
-			Fallback: fmt.Sprintf("Alert #%d: %s", id, slackutilsx.EscapeMessage(summary)),
+			Fallback: slackutilsx.EscapeMessage(title),
 			Blocks:   slack.Blocks{BlockSet: blocks},
 		},
 	)
@@ -471,14 +493,22 @@ func (s *ChannelSender) SendMessage(ctx context.Context, msg notification.Messag
 			break
 		}
 
-		opts = append(opts, alertMsgOption(ctx, t.MsgID(), t.AlertID, t.Summary, "Unacknowledged", notification.AlertStateUnacknowledged))
+		title, text, buttons, err := renderAlertTemplates(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Meta, "Unacknowledged", notification.AlertStateUnacknowledged)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, alertMsgOption(ctx, t.MsgID(), t.AlertID, title, text, buttons, "Unacknowledged", notification.AlertStateUnacknowledged))
 	case notification.AlertStatus:
 		isUpdate = true
 		var ts string
 		channelID, ts = chanTS(channelID, t.OriginalStatus.ProviderMessageID.ExternalID)
+		title, text, buttons, err := renderAlertTemplates(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Meta, t.LogEntry, t.NewAlertState)
+		if err != nil {
+			return nil, err
+		}
 		opts = append(opts,
 			slack.MsgOptionUpdate(ts),
-			alertMsgOption(ctx, t.OriginalStatus.ID, t.AlertID, t.Summary, t.LogEntry, t.NewAlertState),
+			alertMsgOption(ctx, t.OriginalStatus.ID, t.AlertID, title, text, buttons, t.LogEntry, t.NewAlertState),
 		)
 	case notification.AlertBundle:
 		opts = append(opts, slack.MsgOptionText(

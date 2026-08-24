@@ -119,4 +119,25 @@ func TestConfig_Validate(t *testing.T) {
 		cfg.Twilio.VoiceLanguage = "\x00" // non-ASCII value
 		assert.Error(t, cfg.Validate(), "language must be a valid string")
 	})
+
+	t.Run("Slack templates", func(t *testing.T) {
+		var cfg Config
+		cfg.Slack.SigningSecret = "secret"
+		cfg.Slack.TitleTemplate = `{{ .CommonLabels.alertname | title }}`
+		cfg.Slack.TextTemplate = `{{ (index .Alerts 0).Annotations.summary }}`
+		assert.NoError(t, cfg.Validate())
+
+		cfg.Slack.TitleTemplate = `{{`
+		assert.ErrorContains(t, cfg.Validate(), "Slack.TitleTemplate")
+
+		cfg.Slack.TitleTemplate = `{{ .Summary }}`
+		cfg.Slack.TextTemplate = `{{ notAFunction .Summary }}`
+		assert.ErrorContains(t, cfg.Validate(), "Slack.TextTemplate")
+
+		cfg.Slack.TextTemplate = ""
+		cfg.Slack.RichAlerts = true
+		assert.NoError(t, cfg.Validate())
+		cfg.Slack.SigningSecret = ""
+		assert.ErrorContains(t, cfg.Validate(), "Slack.SigningSecret")
+	})
 }

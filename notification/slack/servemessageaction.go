@@ -64,7 +64,7 @@ func (s *ChannelSender) ServeMessageAction(w http.ResponseWriter, req *http.Requ
 	ctx := req.Context()
 	cfg := config.FromContext(ctx)
 
-	if !cfg.Slack.InteractiveMessages {
+	if !cfg.Slack.InteractiveMessages && !richAlertsEnabled(cfg) {
 		http.Error(w, "not enabled", http.StatusNotFound)
 		return
 	}
@@ -108,6 +108,15 @@ func (s *ChannelSender) ServeMessageAction(w http.ResponseWriter, req *http.Requ
 	}
 
 	act := payload.Actions[0]
+	if act.BlockID == alertLinksBlockID {
+		switch act.ActionID {
+		case alertDashboardActionID, alertRunbookActionID:
+			return
+		default:
+			errutil.HTTPError(ctx, w, validation.NewFieldErrorf("action_id", "unknown link action ID '%s'", act.ActionID))
+			return
+		}
+	}
 	if act.BlockID != alertResponseBlockID {
 		errutil.HTTPError(ctx, w, validation.NewFieldErrorf("block_id", "unknown block ID '%s'", act.BlockID))
 		return
