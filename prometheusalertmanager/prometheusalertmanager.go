@@ -2,6 +2,7 @@ package prometheus
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -131,6 +132,19 @@ func (b postBody) Summary() string {
 	return b.CommonLabels["alertname"] + " " + strings.Join(instances, ",")
 }
 
+func (b postBody) DedupKey() string {
+	if b.GroupKey == "" {
+		// Preserve compatibility with webhook payloads that predate groupKey or
+		// are produced by Alertmanager-compatible systems that omit it.
+		return b.Summary()
+	}
+
+	// Alertmanager's groupKey is stable for firing and resolved notifications.
+	// Hash it so unusually large label sets cannot be truncated by GoAlert's
+	// user-provided dedup key limit and accidentally collide.
+	return fmt.Sprintf("prometheus-alertmanager:%x", sha256.Sum256([]byte(b.GroupKey)))
+}
+
 func (b postBody) Details(payload string) string {
 	var s strings.Builder
 	if b.ExternalURL != "" {
@@ -216,7 +230,7 @@ func PrometheusAlertmanagerEventsAPI(aDB *alert.Store, intDB *integrationkey.Sto
 			Status:    status,
 			Source:    alert.SourcePrometheusAlertmanager,
 			ServiceID: serviceID,
-			Dedup:     alert.NewUserDedup(summary),
+			Dedup:     alert.NewUserDedup(body.DedupKey()),
 		}
 		meta, metaErr := body.Metadata()
 		if metaErr != nil {
