@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/target/goalert/notification/slacktmpl"
 	"github.com/target/goalert/validation"
 	"github.com/target/goalert/validation/validate"
 )
@@ -98,9 +99,12 @@ type Config struct {
 		// https://api.slack.com/docs/token-types#bot
 		AccessToken string `password:"true" info:"Slack app bot user OAuth access token (should start with xoxb-)."`
 
-		SigningSecret       string `password:"true" info:"Signing secret to verify requests from slack."`
-		InteractiveMessages bool   `info:"Enable interactive messages (e.g. buttons)."`
-		DisableBroadcastThreadReplies bool `info:"Disable broadcasting alert status updates in threads to the main channel." public:"true"`
+		SigningSecret                 string `password:"true" info:"Signing secret to verify requests from slack."`
+		InteractiveMessages           bool   `info:"Enable interactive messages (e.g. buttons)."`
+		DisableBroadcastThreadReplies bool   `info:"Disable broadcasting alert status updates in threads to the main channel." public:"true"`
+		RichAlerts                    bool   `info:"Enable rich Slack alerts. Empty templates use GoAlert's built-in rich layout."`
+		TitleTemplate                 string `info:"Optional Go template for the Slack alert title. Alertmanager data includes .Status, .Alerts, .CommonLabels, .CommonAnnotations, and .Meta."`
+		TextTemplate                  string `info:"Optional Go template for the Slack alert body. Use .Meta.name for one label or annotation, or range .Meta.SortedPairs to display all available values."`
 	}
 
 	Twilio struct {
@@ -461,6 +465,12 @@ func (cfg Config) Validate() error {
 		}
 		return err
 	}
+	validateSlackTemplate := func(fname, value string) error {
+		if err := slacktmpl.Validate(fname, value); err != nil {
+			return validation.NewFieldError(fname, err.Error())
+		}
+		return nil
+	}
 
 	err = validate.Many(
 		err,
@@ -486,6 +496,10 @@ func (cfg Config) Validate() error {
 		validatePath("OIDC.UserInfoEmailVerifiedPath", cfg.OIDC.UserInfoEmailVerifiedPath),
 		validatePath("OIDC.UserInfoNamePath", cfg.OIDC.UserInfoNamePath),
 		validateKey("Slack.SigningSecret", cfg.Slack.SigningSecret),
+		validate.Text("Slack.TitleTemplate", cfg.Slack.TitleTemplate, 0, 16*1024),
+		validate.Text("Slack.TextTemplate", cfg.Slack.TextTemplate, 0, 16*1024),
+		validateSlackTemplate("Slack.TitleTemplate", cfg.Slack.TitleTemplate),
+		validateSlackTemplate("Slack.TextTemplate", cfg.Slack.TextTemplate),
 	)
 
 	if cfg.General.GoogleAnalyticsID != "" {
@@ -524,8 +538,8 @@ func (cfg Config) Validate() error {
 	if cfg.SMTP.From != "" {
 		err = validate.Many(err, validate.Email("SMTP.From", cfg.SMTP.From))
 	}
-	if cfg.Slack.InteractiveMessages && cfg.Slack.SigningSecret == "" {
-		err = validate.Many(err, validation.NewFieldError("Slack.SigningSecret", "required to enable Slack interactive messages"))
+	if (cfg.Slack.InteractiveMessages || cfg.Slack.RichAlerts || cfg.Slack.TitleTemplate != "" || cfg.Slack.TextTemplate != "") && cfg.Slack.SigningSecret == "" {
+		err = validate.Many(err, validation.NewFieldError("Slack.SigningSecret", "required to enable Slack interactive messages or alert templates"))
 	}
 
 	err = validate.Many(

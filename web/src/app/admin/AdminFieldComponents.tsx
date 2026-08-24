@@ -20,6 +20,8 @@ interface InputProps {
 export function StringInput(props: InputProps): React.JSX.Element {
   const [showPassword, setShowPassword] = useState(false)
   const { onChange, password, type = 'text', ...rest } = props
+  const isTemplate =
+    props.name === 'Slack.TitleTemplate' || props.name === 'Slack.TextTemplate'
 
   const renderPasswordAdornment = (): React.JSX.Element | null => {
     if (!props.password) return null
@@ -45,6 +47,9 @@ export function StringInput(props: InputProps): React.JSX.Element {
       fullWidth
       autoComplete='new-password' // chrome keeps autofilling them, this stops it
       type={password && !showPassword ? 'password' : type}
+      multiline={isTemplate}
+      minRows={isTemplate ? 4 : undefined}
+      maxRows={isTemplate ? 12 : undefined}
       onChange={(e) => onChange(e.target.value)}
       endAdornment={renderPasswordAdornment()}
       {...rest}

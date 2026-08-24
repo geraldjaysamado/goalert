@@ -69,6 +69,9 @@ func MapConfigValues(cfg config.Config) []ConfigValue {
 		{ID: "Slack.SigningSecret", Type: ConfigTypeString, Description: "Signing secret to verify requests from slack.", Value: cfg.Slack.SigningSecret, Password: true},
 		{ID: "Slack.InteractiveMessages", Type: ConfigTypeBoolean, Description: "Enable interactive messages (e.g. buttons).", Value: fmt.Sprintf("%t", cfg.Slack.InteractiveMessages)},
 		{ID: "Slack.DisableBroadcastThreadReplies", Type: ConfigTypeBoolean, Description: "Disable broadcasting alert status updates in threads to the main channel.", Value: fmt.Sprintf("%t", cfg.Slack.DisableBroadcastThreadReplies)},
+		{ID: "Slack.RichAlerts", Type: ConfigTypeBoolean, Description: "Enable rich Slack alerts. Empty templates use GoAlert's built-in rich layout.", Value: fmt.Sprintf("%t", cfg.Slack.RichAlerts)},
+		{ID: "Slack.TitleTemplate", Type: ConfigTypeString, Description: "Optional Go template for the Slack alert title. Alertmanager data includes .Status, .Alerts, .CommonLabels, .CommonAnnotations, and .Meta.", Value: cfg.Slack.TitleTemplate},
+		{ID: "Slack.TextTemplate", Type: ConfigTypeString, Description: "Optional Go template for the Slack alert body. Use .Meta.name for one label or annotation, or range .Meta.SortedPairs to display all available values.", Value: cfg.Slack.TextTemplate},
 		{ID: "Twilio.Enable", Type: ConfigTypeBoolean, Description: "Enables sending and processing of Voice and SMS messages through the Twilio notification provider.", Value: fmt.Sprintf("%t", cfg.Twilio.Enable)},
 		{ID: "Twilio.VoiceName", Type: ConfigTypeString, Description: "The Twilio voice to use for Text To Speech for phone calls. See https://www.twilio.com/docs/voice/twiml/say/text-speech#polly-standard-and-neural-voices", Value: cfg.Twilio.VoiceName},
 		{ID: "Twilio.VoiceLanguage", Type: ConfigTypeString, Description: "The Twilio voice language to use for Text To Speech for phone calls. See https://www.twilio.com/docs/voice/twiml/say/text-speech#polly-standard-and-neural-voices", Value: cfg.Twilio.VoiceLanguage},
@@ -321,6 +324,16 @@ func ApplyConfigValues(cfg config.Config, vals []ConfigValueInput) (config.Confi
 				return cfg, err
 			}
 			cfg.Slack.DisableBroadcastThreadReplies = val
+		case "Slack.RichAlerts":
+			val, err := parseBool(v.ID, v.Value)
+			if err != nil {
+				return cfg, err
+			}
+			cfg.Slack.RichAlerts = val
+		case "Slack.TitleTemplate":
+			cfg.Slack.TitleTemplate = v.Value
+		case "Slack.TextTemplate":
+			cfg.Slack.TextTemplate = v.Value
 		case "Twilio.Enable":
 			val, err := parseBool(v.ID, v.Value)
 			if err != nil {
