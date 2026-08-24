@@ -47,3 +47,27 @@ func TestPostBodyMetadata(t *testing.T) {
 func TestPostBodySummaryWithoutAlerts(t *testing.T) {
 	assert.Equal(t, "Prometheus Alertmanager alert", (postBody{}).Summary())
 }
+
+func TestPostBodyDedupKey(t *testing.T) {
+	firing := postBody(slacktmpl.AlertmanagerData{
+		Status:   "firing",
+		GroupKey: `{}/{alertname="QueueDown",app="app-a"}`,
+		CommonAnnotations: slacktmpl.KV{
+			"summary": "Queue is down",
+		},
+	})
+	resolved := firing
+	resolved.Status = "resolved"
+	resolved.CommonAnnotations = slacktmpl.KV{"summary": "changed resolved summary"}
+
+	assert.Equal(t, firing.DedupKey(), resolved.DedupKey(), "firing and resolved notifications for one group must match")
+
+	otherGroup := firing
+	otherGroup.GroupKey = `{}/{alertname="QueueDown",app="app-b"}`
+	assert.NotEqual(t, firing.DedupKey(), otherGroup.DedupKey(), "groups with the same summary must remain distinct")
+
+	withoutGroupKey := postBody(slacktmpl.AlertmanagerData{
+		CommonAnnotations: slacktmpl.KV{"summary": "legacy summary"},
+	})
+	assert.Equal(t, "legacy summary", withoutGroupKey.DedupKey(), "payloads without groupKey must retain summary-based deduplication")
+}
