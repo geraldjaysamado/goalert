@@ -90,7 +90,7 @@ func TestPrometheusAlertManagerGroupKeyDedup(t *testing.T) {
 	insert into integration_keys (id, type, name, service_id)
 	values ({{uuid "int_key"}}, 'prometheusAlertmanager', 'my key', {{uuid "sid"}});
 `
-	h := harness.NewHarness(t, sql, "prometheus-alertmanager-group-key-dedup")
+	h := harness.NewHarness(t, sql, "")
 	defer h.Close()
 
 	url := h.URL() + "/api/v2/prometheusalertmanager/incoming?token=" + h.UUID("int_key")
