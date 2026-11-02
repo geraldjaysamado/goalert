@@ -120,6 +120,38 @@ func TestConfig_Validate(t *testing.T) {
 		assert.Error(t, cfg.Validate(), "language must be a valid string")
 	})
 
+	t.Run("Slack template library", func(t *testing.T) {
+		const tmplID = "6f1c2c62-55d4-4f43-8a1e-3a4f7f7c9a01"
+		const svcID = "0d3b0d4e-0000-4000-8000-000000000001"
+		var cfg Config
+		cfg.Slack.SigningSecret = "secret"
+		cfg.Slack.AlertTemplateLibrary = `[{"id":"` + tmplID + `","name":"Infra","title":"{{ .Summary }}","text":"{{ .Details }}"}]`
+		assert.NoError(t, cfg.Validate())
+
+		cfg.Slack.ServiceAlertTemplates = []string{svcID + "=" + tmplID}
+		assert.NoError(t, cfg.Validate())
+
+		// Deleting an assigned template must be rejected.
+		cfg.Slack.AlertTemplateLibrary = ""
+		assert.ErrorContains(t, cfg.Validate(), "Slack.ServiceAlertTemplates")
+
+		// Assignments require the signing secret (link buttons use the Slack interaction endpoint).
+		cfg.Slack.AlertTemplateLibrary = `[{"id":"` + tmplID + `","name":"Infra","title":"{{ .Summary }}","text":""}]`
+		cfg.Slack.SigningSecret = ""
+		assert.ErrorContains(t, cfg.Validate(), "Slack.SigningSecret")
+		cfg.Slack.SigningSecret = "secret"
+
+		cfg.Slack.AlertTemplateLibrary = `[{"id":"` + tmplID + `","name":"Infra","title":"{{","text":""}]`
+		assert.ErrorContains(t, cfg.Validate(), "Slack.AlertTemplateLibrary")
+
+		cfg.Slack.AlertTemplateLibrary = `not json`
+		assert.ErrorContains(t, cfg.Validate(), "Slack.AlertTemplateLibrary")
+
+		cfg.Slack.AlertTemplateLibrary = ""
+		cfg.Slack.ServiceAlertTemplates = []string{"not-a-uuid=" + tmplID}
+		assert.ErrorContains(t, cfg.Validate(), "Slack.ServiceAlertTemplates")
+	})
+
 	t.Run("Slack templates", func(t *testing.T) {
 		var cfg Config
 		cfg.Slack.SigningSecret = "secret"

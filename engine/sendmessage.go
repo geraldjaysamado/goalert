@@ -84,6 +84,7 @@ func (p *Engine) sendMessage(ctx context.Context, msg *message.Message) (*notifi
 			ServiceID:   a.ServiceID,
 			ServiceName: name,
 			Meta:        meta,
+			Source:      string(a.Source),
 
 			OriginalStatus: stat,
 		}
@@ -134,6 +135,7 @@ func (p *Engine) sendMessage(ctx context.Context, msg *message.Message) (*notifi
 			OriginalStatus: *stat,
 			ServiceName:    name,
 			Meta:           meta,
+			Source:         string(a.Source),
 		}
 	case notification.MessageTypeTest:
 		notifMsg = notification.Test{

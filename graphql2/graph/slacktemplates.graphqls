@@ -1,0 +1,143 @@
+extend type Query {
+  """
+  Named Slack alert templates. Requires admin.
+  """
+  slackAlertTemplates: [SlackAlertTemplate!]!
+
+  """
+  Built-in example templates that can be used as a starting point. Requires admin.
+  """
+  slackAlertTemplateExamples: [SlackAlertTemplateExample!]!
+
+  """
+  Sample alerts available for template previews. Requires admin.
+  """
+  slackAlertTemplatePreviewSamples: [SlackAlertTemplatePreviewSample!]!
+
+  """
+  Renders a Slack template against sample data. Nothing is sent. Requires admin.
+  """
+  previewSlackAlertTemplate(
+    input: PreviewSlackAlertTemplateInput!
+  ): SlackAlertTemplatePreview!
+}
+
+extend type Mutation {
+  """
+  Adds a named template to the Slack template library. Requires admin.
+  """
+  createSlackAlertTemplate(
+    input: CreateSlackAlertTemplateInput!
+  ): SlackAlertTemplate!
+
+  """
+  Updates a library template. Fails with a conflict if it changed since expectedRevision was read. Requires admin.
+  """
+  updateSlackAlertTemplate(input: UpdateSlackAlertTemplateInput!): Boolean!
+
+  """
+  Deletes a library template. Fails while any existing service uses it. Requires admin.
+  """
+  deleteSlackAlertTemplate(id: ID!): Boolean!
+
+  """
+  Sets (or clears, when templateID is null) the Slack template for one service. Requires admin.
+  """
+  setServiceSlackAlertTemplate(
+    input: SetServiceSlackAlertTemplateInput!
+  ): Boolean!
+}
+
+type SlackAlertTemplate {
+  id: ID!
+  name: String!
+  title: String!
+  text: String!
+
+  """
+  Changes whenever the name, title or body changes. Pass it as expectedRevision when updating.
+  """
+  revision: String!
+
+  """
+  Existing services that use this template.
+  """
+  services: [Service!]!
+}
+
+type SlackAlertTemplateExample {
+  key: ID!
+  name: String!
+  description: String!
+  title: String!
+  text: String!
+}
+
+type SlackAlertTemplatePreviewSample {
+  id: ID!
+  name: String!
+}
+
+input PreviewSlackAlertTemplateInput {
+  title: String!
+  text: String!
+
+  """
+  ID of a built-in sample. Ignored when alertmanagerPayload is set.
+  """
+  sampleID: ID
+
+  """
+  Optional Alertmanager webhook JSON to preview with instead of a sample.
+  """
+  alertmanagerPayload: String
+
+  """
+  Alert status to render. Defaults to StatusUnacknowledged.
+  """
+  status: AlertStatus
+}
+
+type SlackAlertTemplatePreview {
+  title: String!
+  text: String!
+  buttons: [SlackAlertTemplatePreviewButton!]!
+
+  """
+  True when the body exceeded Slack's limit and was shortened.
+  """
+  truncated: Boolean!
+}
+
+type SlackAlertTemplatePreviewButton {
+  label: String!
+  url: String!
+}
+
+input CreateSlackAlertTemplateInput {
+  name: String!
+  title: String!
+  text: String!
+}
+
+input UpdateSlackAlertTemplateInput {
+  id: ID!
+
+  """
+  The revision the editor loaded. The update fails if the template changed since.
+  """
+  expectedRevision: String!
+
+  name: String
+  title: String
+  text: String
+}
+
+input SetServiceSlackAlertTemplateInput {
+  serviceID: ID!
+
+  """
+  Template to use, or null to use the existing/default formatting.
+  """
+  templateID: ID
+}

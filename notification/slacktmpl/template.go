@@ -204,7 +204,34 @@ type Data struct {
 	Meta      KV
 	AlertMeta map[string]string
 	LogEntry  string
+
+	// AlertmanagerDataState describes how much Alertmanager data is available:
+	//   "complete"      - the full payload was decoded (.Alerts, counts, ...).
+	//   "unreadable"    - a stored payload exists but could not be decoded.
+	//   "metadata-only" - an Alertmanager alert (per .Source) without a stored
+	//                     payload; .AlertMeta holds the flattened labels and
+	//                     annotations, if any (ingestion stores only these
+	//                     when the payload does not fit). For groups these are
+	//                     only the values common to every alert - possibly
+	//                     without alertname when alert names differ.
+	//   "none"          - not an Alertmanager alert (manual, generic API, ...);
+	//                     .AlertMeta may hold other metadata, even alertname.
+	// If .Source is unknown (empty), an alertname label selects "metadata-only".
+	// Except for "complete", .Alerts is a single placeholder. The reason a
+	// payload is missing is not recorded, so templates should not state one.
+	AlertmanagerDataState string
+
+	// Source is the alert's source (e.g. "prometheusAlertmanager", "generic",
+	// "manual"), or empty if unknown.
+	Source string
+
+	// MaxListedAlerts is how many entries of .Alerts a template should list.
+	// For assigned library templates the renderer lowers it until the body
+	// fits Slack's limit; otherwise it equals len(.Alerts).
+	MaxListedAlerts int
 }
+
+var slackEscaper = strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;")
 
 func funcs(routeLabels KV) template.FuncMap {
 	return template.FuncMap{
@@ -280,6 +307,39 @@ func funcs(routeLabels KV) template.FuncMap {
 			return result, nil
 		},
 		"routeLabels": func(name string) string { return routeLabels[name] },
+		// coalesce returns the first value that is not blank.
+		"coalesce": func(values ...string) string {
+			for _, value := range values {
+				if strings.TrimSpace(value) != "" {
+					return value
+				}
+			}
+			return ""
+		},
+		// firstN returns at most n alerts, for listing grouped notifications
+		// within Slack's message size limit.
+		"firstN": func(n int, alerts Alerts) Alerts {
+			if n < 0 {
+				n = 0
+			}
+			if len(alerts) <= n {
+				return alerts
+			}
+			return alerts[:n]
+		},
+		"add": func(a, b int) int { return a + b },
+		"sub": func(a, b int) int { return a - b },
+		// slackEscape escapes the characters Slack mrkdwn treats as control
+		// sequences (&, <, >).
+		"slackEscape": func(text string) string {
+			return slackEscaper.Replace(text)
+		},
+		// k8sResource extracts the affected Kubernetes resource from labels.
+		"k8sResource": func(labels map[string]string) K8sResource { return ResourceFromLabels(labels) },
+		// safeURL returns the URL only if it is a valid http(s) URL safe for a Slack link.
+		"safeURL": SafeURL,
+		// truncate shortens text to n runes with a trailing "…".
+		"truncate": Truncate,
 	}
 }
 

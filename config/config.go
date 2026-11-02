@@ -105,6 +105,9 @@ type Config struct {
 		RichAlerts                    bool   `info:"Enable rich Slack alerts. Empty templates use GoAlert's built-in rich layout."`
 		TitleTemplate                 string `info:"Optional Go template for the Slack alert title. Alertmanager data includes .Status, .Alerts, .CommonLabels, .CommonAnnotations, and .Meta."`
 		TextTemplate                  string `info:"Optional Go template for the Slack alert body. Use .Meta.name for one label or annotation, or range .Meta.SortedPairs to display all available values."`
+
+		AlertTemplateLibrary  string   `info:"Named Slack alert templates. Manage these from Admin > Slack Templates; do not edit by hand."`
+		ServiceAlertTemplates []string `info:"Per-service Slack template assignments (serviceID=templateID). Manage these from the service edit dialog; do not edit by hand."`
 	}
 
 	Twilio struct {
@@ -500,7 +503,23 @@ func (cfg Config) Validate() error {
 		validate.Text("Slack.TextTemplate", cfg.Slack.TextTemplate, 0, 16*1024),
 		validateSlackTemplate("Slack.TitleTemplate", cfg.Slack.TitleTemplate),
 		validateSlackTemplate("Slack.TextTemplate", cfg.Slack.TextTemplate),
+		validate.Text("Slack.AlertTemplateLibrary", cfg.Slack.AlertTemplateLibrary, 0, slacktmpl.MaxLibrarySize),
 	)
+
+	slackLib, libErr := slacktmpl.ParseLibrary(cfg.Slack.AlertTemplateLibrary)
+	if libErr == nil {
+		libErr = slacktmpl.ValidateLibrary(slackLib)
+	}
+	if libErr != nil {
+		err = validate.Many(err, validation.NewFieldError("Slack.AlertTemplateLibrary", libErr.Error()))
+	}
+	slackAssign, assignErr := slacktmpl.ParseAssignments(cfg.Slack.ServiceAlertTemplates)
+	if assignErr == nil && libErr == nil {
+		assignErr = slacktmpl.ValidateAssignments(slackLib, slackAssign)
+	}
+	if assignErr != nil {
+		err = validate.Many(err, validation.NewFieldError("Slack.ServiceAlertTemplates", assignErr.Error()))
+	}
 
 	if cfg.General.GoogleAnalyticsID != "" {
 		err = validate.Many(err, validate.MeasurementID("General.GoogleAnalyticsID", cfg.General.GoogleAnalyticsID))
@@ -538,7 +557,7 @@ func (cfg Config) Validate() error {
 	if cfg.SMTP.From != "" {
 		err = validate.Many(err, validate.Email("SMTP.From", cfg.SMTP.From))
 	}
-	if (cfg.Slack.InteractiveMessages || cfg.Slack.RichAlerts || cfg.Slack.TitleTemplate != "" || cfg.Slack.TextTemplate != "") && cfg.Slack.SigningSecret == "" {
+	if (cfg.Slack.InteractiveMessages || cfg.Slack.RichAlerts || cfg.Slack.TitleTemplate != "" || cfg.Slack.TextTemplate != "" || len(cfg.Slack.ServiceAlertTemplates) > 0) && cfg.Slack.SigningSecret == "" {
 		err = validate.Many(err, validation.NewFieldError("Slack.SigningSecret", "required to enable Slack interactive messages or alert templates"))
 	}
 

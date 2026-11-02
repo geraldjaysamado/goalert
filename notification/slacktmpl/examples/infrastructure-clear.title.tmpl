@@ -1,0 +1,9 @@
+{{- /* Infrastructure — Clear (title). Plain text; GoAlert links it to the alert. */ -}}
+{{- $what := "" }}{{ $sev := "" -}}
+{{- if or (eq .AlertmanagerDataState "metadata-only") (eq .AlertmanagerDataState "unreadable") -}}
+  {{- $sev = .AlertMeta.severity }}{{ $what = coalesce .AlertMeta.summary .AlertMeta.alertname .Summary -}}
+{{- else -}}
+  {{- $sev = coalesce .CommonLabels.severity .Meta.severity }}{{ $what = coalesce .CommonAnnotations.summary .Meta.summary .CommonLabels.alertname .Summary -}}
+{{- end -}}
+{{- if eq .GoAlertStatus "closed" }}RESOLVED{{ else if $sev }}{{ toUpper $sev }}{{ else }}ALERT{{ end }} — {{ $what }}
+{{- if eq .AlertmanagerDataState "complete" }}{{ $total := add (len .Alerts) .TruncatedAlerts }}{{ if gt $total 1 }} ({{ $total }} alerts){{ end }}{{ end -}}

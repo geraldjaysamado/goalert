@@ -474,6 +474,7 @@ type ComplexityRoot struct {
 		CreateRotation                     func(childComplexity int, input CreateRotationInput) int
 		CreateSchedule                     func(childComplexity int, input CreateScheduleInput) int
 		CreateService                      func(childComplexity int, input CreateServiceInput) int
+		CreateSlackAlertTemplate           func(childComplexity int, input CreateSlackAlertTemplateInput) int
 		CreateUser                         func(childComplexity int, input CreateUserInput) int
 		CreateUserCalendarSubscription     func(childComplexity int, input CreateUserCalendarSubscriptionInput) int
 		CreateUserContactMethod            func(childComplexity int, input CreateUserContactMethodInput) int
@@ -485,6 +486,7 @@ type ComplexityRoot struct {
 		DeleteAuthSubject                  func(childComplexity int, input user.AuthSubject) int
 		DeleteGQLAPIKey                    func(childComplexity int, id string) int
 		DeleteSecondaryToken               func(childComplexity int, id string) int
+		DeleteSlackAlertTemplate           func(childComplexity int, id string) int
 		EndAllAuthSessionsByCurrentUser    func(childComplexity int) int
 		EscalateAlerts                     func(childComplexity int, input []int) int
 		GenerateKeyToken                   func(childComplexity int, id string) int
@@ -498,6 +500,7 @@ type ComplexityRoot struct {
 		SetFavorite                        func(childComplexity int, input SetFavoriteInput) int
 		SetLabel                           func(childComplexity int, input SetLabelInput) int
 		SetScheduleOnCallNotificationRules func(childComplexity int, input SetScheduleOnCallNotificationRulesInput) int
+		SetServiceSlackAlertTemplate       func(childComplexity int, input SetServiceSlackAlertTemplateInput) int
 		SetSystemLimits                    func(childComplexity int, input []SystemLimitInput) int
 		SetTemporarySchedule               func(childComplexity int, input SetTemporaryScheduleInput) int
 		SwoAction                          func(childComplexity int, action SWOAction) int
@@ -514,6 +517,7 @@ type ComplexityRoot struct {
 		UpdateSchedule                     func(childComplexity int, input UpdateScheduleInput) int
 		UpdateScheduleTarget               func(childComplexity int, input ScheduleTargetInput) int
 		UpdateService                      func(childComplexity int, input UpdateServiceInput) int
+		UpdateSlackAlertTemplate           func(childComplexity int, input UpdateSlackAlertTemplateInput) int
 		UpdateUser                         func(childComplexity int, input UpdateUserInput) int
 		UpdateUserCalendarSubscription     func(childComplexity int, input UpdateUserCalendarSubscriptionInput) int
 		UpdateUserContactMethod            func(childComplexity int, input UpdateUserContactMethodInput) int
@@ -577,56 +581,60 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		ActionInputValidate       func(childComplexity int, input gadb.UIKActionV1) int
-		Alert                     func(childComplexity int, id int) int
-		Alerts                    func(childComplexity int, input *AlertSearchOptions) int
-		AuthSubjectsForProvider   func(childComplexity int, first *int, after *string, providerID string) int
-		CalcRotationHandoffTimes  func(childComplexity int, input *CalcRotationHandoffTimesInput) int
-		Config                    func(childComplexity int, all *bool) int
-		ConfigHints               func(childComplexity int) int
-		DebugMessageStatus        func(childComplexity int, input DebugMessageStatusInput) int
-		DebugMessages             func(childComplexity int, input *DebugMessagesInput) int
-		DestinationDisplayInfo    func(childComplexity int, input gadb.DestV1) int
-		DestinationFieldSearch    func(childComplexity int, input DestinationFieldSearchInput) int
-		DestinationFieldValidate  func(childComplexity int, input DestinationFieldValidateInput) int
-		DestinationFieldValueName func(childComplexity int, input DestinationFieldValidateInput) int
-		DestinationTypes          func(childComplexity int, isDynamicAction *bool) int
-		EscalationPolicies        func(childComplexity int, input *EscalationPolicySearchOptions) int
-		EscalationPolicy          func(childComplexity int, id string) int
-		ExperimentalFlags         func(childComplexity int) int
-		Expr                      func(childComplexity int) int
-		GenerateSlackAppManifest  func(childComplexity int) int
-		GqlAPIKeys                func(childComplexity int) int
-		HeartbeatMonitor          func(childComplexity int, id string) int
-		IntegrationKey            func(childComplexity int, id string) int
-		IntegrationKeyTypes       func(childComplexity int) int
-		IntegrationKeys           func(childComplexity int, input *IntegrationKeySearchOptions) int
-		LabelKeys                 func(childComplexity int, input *LabelKeySearchOptions) int
-		LabelValues               func(childComplexity int, input *LabelValueSearchOptions) int
-		Labels                    func(childComplexity int, input *LabelSearchOptions) int
-		LinkAccountInfo           func(childComplexity int, token string) int
-		MessageLogs               func(childComplexity int, input *MessageLogSearchOptions) int
-		MessageStatusHistory      func(childComplexity int, id string) int
-		PhoneNumberInfo           func(childComplexity int, number string) int
-		Rotation                  func(childComplexity int, id string) int
-		Rotations                 func(childComplexity int, input *RotationSearchOptions) int
-		Schedule                  func(childComplexity int, id string) int
-		Schedules                 func(childComplexity int, input *ScheduleSearchOptions) int
-		Service                   func(childComplexity int, id string) int
-		Services                  func(childComplexity int, input *ServiceSearchOptions) int
-		SlackChannel              func(childComplexity int, id string) int
-		SlackChannels             func(childComplexity int, input *SlackChannelSearchOptions) int
-		SlackUserGroup            func(childComplexity int, id string) int
-		SlackUserGroups           func(childComplexity int, input *SlackUserGroupSearchOptions) int
-		SwoStatus                 func(childComplexity int) int
-		SystemLimits              func(childComplexity int) int
-		TimeZones                 func(childComplexity int, input *TimeZoneSearchOptions) int
-		User                      func(childComplexity int, id *string) int
-		UserCalendarSubscription  func(childComplexity int, id string) int
-		UserContactMethod         func(childComplexity int, id string) int
-		UserOverride              func(childComplexity int, id string) int
-		UserOverrides             func(childComplexity int, input *UserOverrideSearchOptions) int
-		Users                     func(childComplexity int, input *UserSearchOptions, first *int, after *string, search *string) int
+		ActionInputValidate              func(childComplexity int, input gadb.UIKActionV1) int
+		Alert                            func(childComplexity int, id int) int
+		Alerts                           func(childComplexity int, input *AlertSearchOptions) int
+		AuthSubjectsForProvider          func(childComplexity int, first *int, after *string, providerID string) int
+		CalcRotationHandoffTimes         func(childComplexity int, input *CalcRotationHandoffTimesInput) int
+		Config                           func(childComplexity int, all *bool) int
+		ConfigHints                      func(childComplexity int) int
+		DebugMessageStatus               func(childComplexity int, input DebugMessageStatusInput) int
+		DebugMessages                    func(childComplexity int, input *DebugMessagesInput) int
+		DestinationDisplayInfo           func(childComplexity int, input gadb.DestV1) int
+		DestinationFieldSearch           func(childComplexity int, input DestinationFieldSearchInput) int
+		DestinationFieldValidate         func(childComplexity int, input DestinationFieldValidateInput) int
+		DestinationFieldValueName        func(childComplexity int, input DestinationFieldValidateInput) int
+		DestinationTypes                 func(childComplexity int, isDynamicAction *bool) int
+		EscalationPolicies               func(childComplexity int, input *EscalationPolicySearchOptions) int
+		EscalationPolicy                 func(childComplexity int, id string) int
+		ExperimentalFlags                func(childComplexity int) int
+		Expr                             func(childComplexity int) int
+		GenerateSlackAppManifest         func(childComplexity int) int
+		GqlAPIKeys                       func(childComplexity int) int
+		HeartbeatMonitor                 func(childComplexity int, id string) int
+		IntegrationKey                   func(childComplexity int, id string) int
+		IntegrationKeyTypes              func(childComplexity int) int
+		IntegrationKeys                  func(childComplexity int, input *IntegrationKeySearchOptions) int
+		LabelKeys                        func(childComplexity int, input *LabelKeySearchOptions) int
+		LabelValues                      func(childComplexity int, input *LabelValueSearchOptions) int
+		Labels                           func(childComplexity int, input *LabelSearchOptions) int
+		LinkAccountInfo                  func(childComplexity int, token string) int
+		MessageLogs                      func(childComplexity int, input *MessageLogSearchOptions) int
+		MessageStatusHistory             func(childComplexity int, id string) int
+		PhoneNumberInfo                  func(childComplexity int, number string) int
+		PreviewSlackAlertTemplate        func(childComplexity int, input PreviewSlackAlertTemplateInput) int
+		Rotation                         func(childComplexity int, id string) int
+		Rotations                        func(childComplexity int, input *RotationSearchOptions) int
+		Schedule                         func(childComplexity int, id string) int
+		Schedules                        func(childComplexity int, input *ScheduleSearchOptions) int
+		Service                          func(childComplexity int, id string) int
+		Services                         func(childComplexity int, input *ServiceSearchOptions) int
+		SlackAlertTemplateExamples       func(childComplexity int) int
+		SlackAlertTemplatePreviewSamples func(childComplexity int) int
+		SlackAlertTemplates              func(childComplexity int) int
+		SlackChannel                     func(childComplexity int, id string) int
+		SlackChannels                    func(childComplexity int, input *SlackChannelSearchOptions) int
+		SlackUserGroup                   func(childComplexity int, id string) int
+		SlackUserGroups                  func(childComplexity int, input *SlackUserGroupSearchOptions) int
+		SwoStatus                        func(childComplexity int) int
+		SystemLimits                     func(childComplexity int) int
+		TimeZones                        func(childComplexity int, input *TimeZoneSearchOptions) int
+		User                             func(childComplexity int, id *string) int
+		UserCalendarSubscription         func(childComplexity int, id string) int
+		UserContactMethod                func(childComplexity int, id string) int
+		UserOverride                     func(childComplexity int, id string) int
+		UserOverrides                    func(childComplexity int, input *UserOverrideSearchOptions) int
+		Users                            func(childComplexity int, input *UserSearchOptions, first *int, after *string, search *string) int
 	}
 
 	Rotation struct {
@@ -738,6 +746,40 @@ type ComplexityRoot struct {
 		StepNumber func(childComplexity int) int
 		UserID     func(childComplexity int) int
 		UserName   func(childComplexity int) int
+	}
+
+	SlackAlertTemplate struct {
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Revision func(childComplexity int) int
+		Services func(childComplexity int) int
+		Text     func(childComplexity int) int
+		Title    func(childComplexity int) int
+	}
+
+	SlackAlertTemplateExample struct {
+		Description func(childComplexity int) int
+		Key         func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Text        func(childComplexity int) int
+		Title       func(childComplexity int) int
+	}
+
+	SlackAlertTemplatePreview struct {
+		Buttons   func(childComplexity int) int
+		Text      func(childComplexity int) int
+		Title     func(childComplexity int) int
+		Truncated func(childComplexity int) int
+	}
+
+	SlackAlertTemplatePreviewButton struct {
+		Label func(childComplexity int) int
+		URL   func(childComplexity int) int
+	}
+
+	SlackAlertTemplatePreviewSample struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
 	}
 
 	SlackChannel struct {
@@ -1013,6 +1055,10 @@ type MutationResolver interface {
 	UpdateGQLAPIKey(ctx context.Context, input UpdateGQLAPIKeyInput) (bool, error)
 	DeleteGQLAPIKey(ctx context.Context, id string) (bool, error)
 	SendSignal(ctx context.Context, input SendSignalInput) (bool, error)
+	CreateSlackAlertTemplate(ctx context.Context, input CreateSlackAlertTemplateInput) (*SlackAlertTemplate, error)
+	UpdateSlackAlertTemplate(ctx context.Context, input UpdateSlackAlertTemplateInput) (bool, error)
+	DeleteSlackAlertTemplate(ctx context.Context, id string) (bool, error)
+	SetServiceSlackAlertTemplate(ctx context.Context, input SetServiceSlackAlertTemplateInput) (bool, error)
 	UpdateKeyConfig(ctx context.Context, input UpdateKeyConfigInput) (bool, error)
 	PromoteSecondaryToken(ctx context.Context, id string) (bool, error)
 	DeleteSecondaryToken(ctx context.Context, id string) (bool, error)
@@ -1075,6 +1121,10 @@ type QueryResolver interface {
 	DestinationDisplayInfo(ctx context.Context, input gadb.DestV1) (*nfydest.DisplayInfo, error)
 	Expr(ctx context.Context) (*Expr, error)
 	GqlAPIKeys(ctx context.Context) ([]GQLAPIKey, error)
+	SlackAlertTemplates(ctx context.Context) ([]SlackAlertTemplate, error)
+	SlackAlertTemplateExamples(ctx context.Context) ([]SlackAlertTemplateExample, error)
+	SlackAlertTemplatePreviewSamples(ctx context.Context) ([]SlackAlertTemplatePreviewSample, error)
+	PreviewSlackAlertTemplate(ctx context.Context, input PreviewSlackAlertTemplateInput) (*SlackAlertTemplatePreview, error)
 	ActionInputValidate(ctx context.Context, input gadb.UIKActionV1) (bool, error)
 }
 type RotationResolver interface {
@@ -2703,6 +2753,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateService(childComplexity, args["input"].(CreateServiceInput)), true
+	case "Mutation.createSlackAlertTemplate":
+		if e.ComplexityRoot.Mutation.CreateSlackAlertTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createSlackAlertTemplate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateSlackAlertTemplate(childComplexity, args["input"].(CreateSlackAlertTemplateInput)), true
 	case "Mutation.createUser":
 		if e.ComplexityRoot.Mutation.CreateUser == nil {
 			break
@@ -2824,6 +2885,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.DeleteSecondaryToken(childComplexity, args["id"].(string)), true
+	case "Mutation.deleteSlackAlertTemplate":
+		if e.ComplexityRoot.Mutation.DeleteSlackAlertTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteSlackAlertTemplate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteSlackAlertTemplate(childComplexity, args["id"].(string)), true
 	case "Mutation.endAllAuthSessionsByCurrentUser":
 		if e.ComplexityRoot.Mutation.EndAllAuthSessionsByCurrentUser == nil {
 			break
@@ -2957,6 +3029,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.SetScheduleOnCallNotificationRules(childComplexity, args["input"].(SetScheduleOnCallNotificationRulesInput)), true
+	case "Mutation.setServiceSlackAlertTemplate":
+		if e.ComplexityRoot.Mutation.SetServiceSlackAlertTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setServiceSlackAlertTemplate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.SetServiceSlackAlertTemplate(childComplexity, args["input"].(SetServiceSlackAlertTemplateInput)), true
 	case "Mutation.setSystemLimits":
 		if e.ComplexityRoot.Mutation.SetSystemLimits == nil {
 			break
@@ -3133,6 +3216,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.UpdateService(childComplexity, args["input"].(UpdateServiceInput)), true
+	case "Mutation.updateSlackAlertTemplate":
+		if e.ComplexityRoot.Mutation.UpdateSlackAlertTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateSlackAlertTemplate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateSlackAlertTemplate(childComplexity, args["input"].(UpdateSlackAlertTemplateInput)), true
 	case "Mutation.updateUser":
 		if e.ComplexityRoot.Mutation.UpdateUser == nil {
 			break
@@ -3695,6 +3789,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.PhoneNumberInfo(childComplexity, args["number"].(string)), true
+	case "Query.previewSlackAlertTemplate":
+		if e.ComplexityRoot.Query.PreviewSlackAlertTemplate == nil {
+			break
+		}
+
+		args, err := ec.field_Query_previewSlackAlertTemplate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.PreviewSlackAlertTemplate(childComplexity, args["input"].(PreviewSlackAlertTemplateInput)), true
 	case "Query.rotation":
 		if e.ComplexityRoot.Query.Rotation == nil {
 			break
@@ -3761,6 +3866,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Services(childComplexity, args["input"].(*ServiceSearchOptions)), true
+	case "Query.slackAlertTemplateExamples":
+		if e.ComplexityRoot.Query.SlackAlertTemplateExamples == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.SlackAlertTemplateExamples(childComplexity), true
+	case "Query.slackAlertTemplatePreviewSamples":
+		if e.ComplexityRoot.Query.SlackAlertTemplatePreviewSamples == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.SlackAlertTemplatePreviewSamples(childComplexity), true
+	case "Query.slackAlertTemplates":
+		if e.ComplexityRoot.Query.SlackAlertTemplates == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.SlackAlertTemplates(childComplexity), true
 	case "Query.slackChannel":
 		if e.ComplexityRoot.Query.SlackChannel == nil {
 			break
@@ -4382,6 +4505,125 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.ServiceOnCallUser.UserName(childComplexity), true
 
+	case "SlackAlertTemplate.id":
+		if e.ComplexityRoot.SlackAlertTemplate.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplate.ID(childComplexity), true
+	case "SlackAlertTemplate.name":
+		if e.ComplexityRoot.SlackAlertTemplate.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplate.Name(childComplexity), true
+	case "SlackAlertTemplate.revision":
+		if e.ComplexityRoot.SlackAlertTemplate.Revision == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplate.Revision(childComplexity), true
+	case "SlackAlertTemplate.services":
+		if e.ComplexityRoot.SlackAlertTemplate.Services == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplate.Services(childComplexity), true
+	case "SlackAlertTemplate.text":
+		if e.ComplexityRoot.SlackAlertTemplate.Text == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplate.Text(childComplexity), true
+	case "SlackAlertTemplate.title":
+		if e.ComplexityRoot.SlackAlertTemplate.Title == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplate.Title(childComplexity), true
+
+	case "SlackAlertTemplateExample.description":
+		if e.ComplexityRoot.SlackAlertTemplateExample.Description == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplateExample.Description(childComplexity), true
+	case "SlackAlertTemplateExample.key":
+		if e.ComplexityRoot.SlackAlertTemplateExample.Key == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplateExample.Key(childComplexity), true
+	case "SlackAlertTemplateExample.name":
+		if e.ComplexityRoot.SlackAlertTemplateExample.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplateExample.Name(childComplexity), true
+	case "SlackAlertTemplateExample.text":
+		if e.ComplexityRoot.SlackAlertTemplateExample.Text == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplateExample.Text(childComplexity), true
+	case "SlackAlertTemplateExample.title":
+		if e.ComplexityRoot.SlackAlertTemplateExample.Title == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplateExample.Title(childComplexity), true
+
+	case "SlackAlertTemplatePreview.buttons":
+		if e.ComplexityRoot.SlackAlertTemplatePreview.Buttons == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreview.Buttons(childComplexity), true
+	case "SlackAlertTemplatePreview.text":
+		if e.ComplexityRoot.SlackAlertTemplatePreview.Text == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreview.Text(childComplexity), true
+	case "SlackAlertTemplatePreview.title":
+		if e.ComplexityRoot.SlackAlertTemplatePreview.Title == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreview.Title(childComplexity), true
+	case "SlackAlertTemplatePreview.truncated":
+		if e.ComplexityRoot.SlackAlertTemplatePreview.Truncated == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreview.Truncated(childComplexity), true
+
+	case "SlackAlertTemplatePreviewButton.label":
+		if e.ComplexityRoot.SlackAlertTemplatePreviewButton.Label == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreviewButton.Label(childComplexity), true
+	case "SlackAlertTemplatePreviewButton.url":
+		if e.ComplexityRoot.SlackAlertTemplatePreviewButton.URL == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreviewButton.URL(childComplexity), true
+
+	case "SlackAlertTemplatePreviewSample.id":
+		if e.ComplexityRoot.SlackAlertTemplatePreviewSample.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreviewSample.ID(childComplexity), true
+	case "SlackAlertTemplatePreviewSample.name":
+		if e.ComplexityRoot.SlackAlertTemplatePreviewSample.Name == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreviewSample.Name(childComplexity), true
+
 	case "SlackChannel.id":
 		if e.ComplexityRoot.SlackChannel.ID == nil {
 			break
@@ -4949,6 +5191,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateRotationInput,
 		ec.unmarshalInputCreateScheduleInput,
 		ec.unmarshalInputCreateServiceInput,
+		ec.unmarshalInputCreateSlackAlertTemplateInput,
 		ec.unmarshalInputCreateUserCalendarSubscriptionInput,
 		ec.unmarshalInputCreateUserContactMethodInput,
 		ec.unmarshalInputCreateUserInput,
@@ -4972,6 +5215,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputLabelValueSearchOptions,
 		ec.unmarshalInputMessageLogSearchOptions,
 		ec.unmarshalInputOnCallNotificationRuleInput,
+		ec.unmarshalInputPreviewSlackAlertTemplateInput,
 		ec.unmarshalInputRotationSearchOptions,
 		ec.unmarshalInputScheduleRuleInput,
 		ec.unmarshalInputScheduleSearchOptions,
@@ -4985,6 +5229,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputSetLabelInput,
 		ec.unmarshalInputSetScheduleOnCallNotificationRulesInput,
 		ec.unmarshalInputSetScheduleShiftInput,
+		ec.unmarshalInputSetServiceSlackAlertTemplateInput,
 		ec.unmarshalInputSetTemporaryScheduleInput,
 		ec.unmarshalInputSlackChannelSearchOptions,
 		ec.unmarshalInputSlackUserGroupSearchOptions,
@@ -5003,6 +5248,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateRotationInput,
 		ec.unmarshalInputUpdateScheduleInput,
 		ec.unmarshalInputUpdateServiceInput,
+		ec.unmarshalInputUpdateSlackAlertTemplateInput,
 		ec.unmarshalInputUpdateUserCalendarSubscriptionInput,
 		ec.unmarshalInputUpdateUserContactMethodInput,
 		ec.unmarshalInputUpdateUserInput,
@@ -5084,7 +5330,7 @@ func newExecutionContext(
 	}
 }
 
-//go:embed "schema.graphql" "graph/_Mutation.graphqls" "graph/_Query.graphqls" "graph/_directives.graphqls" "graph/alerts.graphqls" "graph/destinations.graphqls" "graph/errorcodes.graphqls" "graph/escalationpolicy.graphqls" "graph/expr.graphqls" "graph/gqlapikeys.graphqls" "graph/service.graphqls" "graph/signals.graphqls" "graph/univkeys.graphqls"
+//go:embed "schema.graphql" "graph/_Mutation.graphqls" "graph/_Query.graphqls" "graph/_directives.graphqls" "graph/alerts.graphqls" "graph/destinations.graphqls" "graph/errorcodes.graphqls" "graph/escalationpolicy.graphqls" "graph/expr.graphqls" "graph/gqlapikeys.graphqls" "graph/service.graphqls" "graph/signals.graphqls" "graph/slacktemplates.graphqls" "graph/univkeys.graphqls"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -5108,6 +5354,7 @@ var sources = []*ast.Source{
 	{Name: "graph/gqlapikeys.graphqls", Input: sourceData("graph/gqlapikeys.graphqls"), BuiltIn: false},
 	{Name: "graph/service.graphqls", Input: sourceData("graph/service.graphqls"), BuiltIn: false},
 	{Name: "graph/signals.graphqls", Input: sourceData("graph/signals.graphqls"), BuiltIn: false},
+	{Name: "graph/slacktemplates.graphqls", Input: sourceData("graph/slacktemplates.graphqls"), BuiltIn: false},
 	{Name: "graph/univkeys.graphqls", Input: sourceData("graph/univkeys.graphqls"), BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -6158,6 +6405,74 @@ func (ec *executionContext) childFields_ServiceOnCallUser(ctx context.Context, f
 	return nil, fmt.Errorf("no field named %q was found under type ServiceOnCallUser", field.Name)
 }
 
+func (ec *executionContext) childFields_SlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_SlackAlertTemplate_id(ctx, field)
+	case "name":
+		return ec.fieldContext_SlackAlertTemplate_name(ctx, field)
+	case "title":
+		return ec.fieldContext_SlackAlertTemplate_title(ctx, field)
+	case "text":
+		return ec.fieldContext_SlackAlertTemplate_text(ctx, field)
+	case "revision":
+		return ec.fieldContext_SlackAlertTemplate_revision(ctx, field)
+	case "services":
+		return ec.fieldContext_SlackAlertTemplate_services(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SlackAlertTemplate", field.Name)
+}
+
+func (ec *executionContext) childFields_SlackAlertTemplateExample(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "key":
+		return ec.fieldContext_SlackAlertTemplateExample_key(ctx, field)
+	case "name":
+		return ec.fieldContext_SlackAlertTemplateExample_name(ctx, field)
+	case "description":
+		return ec.fieldContext_SlackAlertTemplateExample_description(ctx, field)
+	case "title":
+		return ec.fieldContext_SlackAlertTemplateExample_title(ctx, field)
+	case "text":
+		return ec.fieldContext_SlackAlertTemplateExample_text(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SlackAlertTemplateExample", field.Name)
+}
+
+func (ec *executionContext) childFields_SlackAlertTemplatePreview(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "title":
+		return ec.fieldContext_SlackAlertTemplatePreview_title(ctx, field)
+	case "text":
+		return ec.fieldContext_SlackAlertTemplatePreview_text(ctx, field)
+	case "buttons":
+		return ec.fieldContext_SlackAlertTemplatePreview_buttons(ctx, field)
+	case "truncated":
+		return ec.fieldContext_SlackAlertTemplatePreview_truncated(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SlackAlertTemplatePreview", field.Name)
+}
+
+func (ec *executionContext) childFields_SlackAlertTemplatePreviewButton(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "label":
+		return ec.fieldContext_SlackAlertTemplatePreviewButton_label(ctx, field)
+	case "url":
+		return ec.fieldContext_SlackAlertTemplatePreviewButton_url(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SlackAlertTemplatePreviewButton", field.Name)
+}
+
+func (ec *executionContext) childFields_SlackAlertTemplatePreviewSample(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+	switch field.Name {
+	case "id":
+		return ec.fieldContext_SlackAlertTemplatePreviewSample_id(ctx, field)
+	case "name":
+		return ec.fieldContext_SlackAlertTemplatePreviewSample_name(ctx, field)
+	}
+	return nil, fmt.Errorf("no field named %q was found under type SlackAlertTemplatePreviewSample", field.Name)
+}
+
 func (ec *executionContext) childFields_SlackChannel(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
 	case "id":
@@ -6846,6 +7161,20 @@ func (ec *executionContext) field_Mutation_createService_args(ctx context.Contex
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_createSlackAlertTemplate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (CreateSlackAlertTemplateInput, error) {
+			return ec.unmarshalNCreateSlackAlertTemplateInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐCreateSlackAlertTemplateInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_createUserCalendarSubscription_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -6987,6 +7316,20 @@ func (ec *executionContext) field_Mutation_deleteGQLAPIKey_args(ctx context.Cont
 }
 
 func (ec *executionContext) field_Mutation_deleteSecondaryToken_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
+		func(ctx context.Context, v any) (string, error) {
+			return ec.unmarshalNID2string(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteSlackAlertTemplate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id",
@@ -7146,6 +7489,20 @@ func (ec *executionContext) field_Mutation_setScheduleOnCallNotificationRules_ar
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (SetScheduleOnCallNotificationRulesInput, error) {
 			return ec.unmarshalNSetScheduleOnCallNotificationRulesInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSetScheduleOnCallNotificationRulesInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setServiceSlackAlertTemplate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (SetServiceSlackAlertTemplateInput, error) {
+			return ec.unmarshalNSetServiceSlackAlertTemplateInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSetServiceSlackAlertTemplateInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -7370,6 +7727,20 @@ func (ec *executionContext) field_Mutation_updateService_args(ctx context.Contex
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
 		func(ctx context.Context, v any) (UpdateServiceInput, error) {
 			return ec.unmarshalNUpdateServiceInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐUpdateServiceInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateSlackAlertTemplate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (UpdateSlackAlertTemplateInput, error) {
+			return ec.unmarshalNUpdateSlackAlertTemplateInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐUpdateSlackAlertTemplateInput(ctx, v)
 		})
 	if err != nil {
 		return nil, err
@@ -7825,6 +8196,20 @@ func (ec *executionContext) field_Query_phoneNumberInfo_args(ctx context.Context
 		return nil, err
 	}
 	args["number"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_previewSlackAlertTemplate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input",
+		func(ctx context.Context, v any) (PreviewSlackAlertTemplateInput, error) {
+			return ec.unmarshalNPreviewSlackAlertTemplateInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐPreviewSlackAlertTemplateInput(ctx, v)
+		})
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -16086,6 +16471,182 @@ func (ec *executionContext) fieldContext_Mutation_sendSignal(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_createSlackAlertTemplate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateSlackAlertTemplate(ctx, fc.Args["input"].(CreateSlackAlertTemplateInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *SlackAlertTemplate) graphql.Marshaler {
+			return ec.marshalNSlackAlertTemplate2ᚖgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplate(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_createSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlackAlertTemplate(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createSlackAlertTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_updateSlackAlertTemplate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateSlackAlertTemplate(ctx, fc.Args["input"].(UpdateSlackAlertTemplateInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_updateSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateSlackAlertTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_deleteSlackAlertTemplate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteSlackAlertTemplate(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_deleteSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteSlackAlertTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_setServiceSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Mutation_setServiceSlackAlertTemplate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().SetServiceSlackAlertTemplate(ctx, fc.Args["input"].(SetServiceSlackAlertTemplateInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Mutation_setServiceSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setServiceSlackAlertTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_updateKeyConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -19143,6 +19704,146 @@ func (ec *executionContext) fieldContext_Query_gqlAPIKeys(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_slackAlertTemplates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_slackAlertTemplates(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SlackAlertTemplates(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []SlackAlertTemplate) graphql.Marshaler {
+			return ec.marshalNSlackAlertTemplate2ᚕgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplateᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_slackAlertTemplates(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlackAlertTemplate(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_slackAlertTemplateExamples(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_slackAlertTemplateExamples(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SlackAlertTemplateExamples(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []SlackAlertTemplateExample) graphql.Marshaler {
+			return ec.marshalNSlackAlertTemplateExample2ᚕgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplateExampleᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_slackAlertTemplateExamples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlackAlertTemplateExample(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_slackAlertTemplatePreviewSamples(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_slackAlertTemplatePreviewSamples(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().SlackAlertTemplatePreviewSamples(ctx)
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []SlackAlertTemplatePreviewSample) graphql.Marshaler {
+			return ec.marshalNSlackAlertTemplatePreviewSample2ᚕgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreviewSampleᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_slackAlertTemplatePreviewSamples(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlackAlertTemplatePreviewSample(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_previewSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_Query_previewSlackAlertTemplate(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().PreviewSlackAlertTemplate(ctx, fc.Args["input"].(PreviewSlackAlertTemplateInput))
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v *SlackAlertTemplatePreview) graphql.Marshaler {
+			return ec.marshalNSlackAlertTemplatePreview2ᚖgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreview(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_Query_previewSlackAlertTemplate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlackAlertTemplatePreview(ctx, field)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_previewSlackAlertTemplate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_actionInputValidate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -21334,6 +22035,461 @@ func (ec *executionContext) _ServiceOnCallUser_stepNumber(ctx context.Context, f
 }
 func (ec *executionContext) fieldContext_ServiceOnCallUser_stepNumber(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("ServiceOnCallUser", field, false, false, errors.New("field of type Int does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplate_id(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplate_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplate_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplate", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplate_name(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplate_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplate_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplate_title(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplate_title(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplate_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplate_text(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplate_text(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Text, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplate_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplate_revision(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplate_revision(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Revision, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplate_revision(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplate", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplate_services(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplate_services(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Services, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []service.Service) graphql.Marshaler {
+			return ec.marshalNService2ᚕgithubᚗcomᚋtargetᚋgoalertᚋserviceᚐServiceᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplate_services(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlackAlertTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_Service(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlackAlertTemplateExample_key(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplateExample) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplateExample_key(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Key, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplateExample_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplateExample", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplateExample_name(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplateExample) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplateExample_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplateExample_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplateExample", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplateExample_description(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplateExample) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplateExample_description(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplateExample_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplateExample", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplateExample_title(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplateExample) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplateExample_title(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplateExample_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplateExample", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplateExample_text(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplateExample) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplateExample_text(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Text, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplateExample_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplateExample", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreview_title(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreview_title(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Title, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreview_title(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplatePreview", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreview_text(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreview_text(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Text, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreview_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplatePreview", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreview_buttons(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreview_buttons(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Buttons, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v []SlackAlertTemplatePreviewButton) graphql.Marshaler {
+			return ec.marshalNSlackAlertTemplatePreviewButton2ᚕgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreviewButtonᚄ(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreview_buttons(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SlackAlertTemplatePreview",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.childFields_SlackAlertTemplatePreviewButton(ctx, field)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreview_truncated(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreview_truncated(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Truncated, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v bool) graphql.Marshaler {
+			return ec.marshalNBoolean2bool(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreview_truncated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplatePreview", field, false, false, errors.New("field of type Boolean does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreviewButton_label(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreviewButton) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreviewButton_label(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Label, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreviewButton_label(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplatePreviewButton", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreviewButton_url(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreviewButton) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreviewButton_url(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.URL, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreviewButton_url(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplatePreviewButton", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreviewSample_id(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreviewSample) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreviewSample_id(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNID2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreviewSample_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplatePreviewSample", field, false, false, errors.New("field of type ID does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreviewSample_name(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreviewSample) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreviewSample_name(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreviewSample_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplatePreviewSample", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _SlackChannel_id(ctx context.Context, field graphql.CollectedField, obj *slack.Channel) (ret graphql.Marshaler) {
@@ -25936,6 +27092,50 @@ func (ec *executionContext) unmarshalInputCreateServiceInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateSlackAlertTemplateInput(ctx context.Context, obj any) (CreateSlackAlertTemplateInput, error) {
+	var it CreateSlackAlertTemplateInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "title", "text"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "text":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Text = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateUserCalendarSubscriptionInput(ctx context.Context, obj any) (CreateUserCalendarSubscriptionInput, error) {
 	var it CreateUserCalendarSubscriptionInput
 	if obj == nil {
@@ -27190,6 +28390,64 @@ func (ec *executionContext) unmarshalInputOnCallNotificationRuleInput(ctx contex
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPreviewSlackAlertTemplateInput(ctx context.Context, obj any) (PreviewSlackAlertTemplateInput, error) {
+	var it PreviewSlackAlertTemplateInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"title", "text", "sampleID", "alertmanagerPayload", "status"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "text":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Text = data
+		case "sampleID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sampleID"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SampleID = data
+		case "alertmanagerPayload":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("alertmanagerPayload"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AlertmanagerPayload = data
+		case "status":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+			data, err := ec.unmarshalOAlertStatus2ᚖgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐAlertStatus(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Status = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRotationSearchOptions(ctx context.Context, obj any) (RotationSearchOptions, error) {
 	var it RotationSearchOptions
 	if obj == nil {
@@ -27854,6 +29112,43 @@ func (ec *executionContext) unmarshalInputSetScheduleShiftInput(ctx context.Cont
 				return it, err
 			}
 			it.End = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSetServiceSlackAlertTemplateInput(ctx context.Context, obj any) (SetServiceSlackAlertTemplateInput, error) {
+	var it SetServiceSlackAlertTemplateInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"serviceID", "templateID"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "serviceID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("serviceID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ServiceID = data
+		case "templateID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("templateID"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TemplateID = data
 		}
 	}
 	return it, nil
@@ -28825,6 +30120,64 @@ func (ec *executionContext) unmarshalInputUpdateServiceInput(ctx context.Context
 				return it, err
 			}
 			it.MaintenanceExpiresAt = data
+		}
+	}
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateSlackAlertTemplateInput(ctx context.Context, obj any) (UpdateSlackAlertTemplateInput, error) {
+	var it UpdateSlackAlertTemplateInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "expectedRevision", "name", "title", "text"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "expectedRevision":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expectedRevision"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ExpectedRevision = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "title":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Title = data
+		case "text":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("text"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Text = data
 		}
 	}
 	return it, nil
@@ -33670,6 +35023,34 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createSlackAlertTemplate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createSlackAlertTemplate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateSlackAlertTemplate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateSlackAlertTemplate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteSlackAlertTemplate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteSlackAlertTemplate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setServiceSlackAlertTemplate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setServiceSlackAlertTemplate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "updateKeyConfig":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateKeyConfig(ctx, field)
@@ -35338,6 +36719,94 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "slackAlertTemplates":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_slackAlertTemplates(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "slackAlertTemplateExamples":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_slackAlertTemplateExamples(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "slackAlertTemplatePreviewSamples":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_slackAlertTemplatePreviewSamples(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "previewSlackAlertTemplate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_previewSlackAlertTemplate(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "actionInputValidate":
 			field := field
 
@@ -36991,6 +38460,271 @@ func (ec *executionContext) _ServiceOnCallUser(ctx context.Context, sel ast.Sele
 			}
 		case "stepNumber":
 			out.Values[i] = ec._ServiceOnCallUser_stepNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var slackAlertTemplateImplementors = []string{"SlackAlertTemplate"}
+
+func (ec *executionContext) _SlackAlertTemplate(ctx context.Context, sel ast.SelectionSet, obj *SlackAlertTemplate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slackAlertTemplateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlackAlertTemplate")
+		case "id":
+			out.Values[i] = ec._SlackAlertTemplate_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._SlackAlertTemplate_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._SlackAlertTemplate_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "text":
+			out.Values[i] = ec._SlackAlertTemplate_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "revision":
+			out.Values[i] = ec._SlackAlertTemplate_revision(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "services":
+			out.Values[i] = ec._SlackAlertTemplate_services(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var slackAlertTemplateExampleImplementors = []string{"SlackAlertTemplateExample"}
+
+func (ec *executionContext) _SlackAlertTemplateExample(ctx context.Context, sel ast.SelectionSet, obj *SlackAlertTemplateExample) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slackAlertTemplateExampleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlackAlertTemplateExample")
+		case "key":
+			out.Values[i] = ec._SlackAlertTemplateExample_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._SlackAlertTemplateExample_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._SlackAlertTemplateExample_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "title":
+			out.Values[i] = ec._SlackAlertTemplateExample_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "text":
+			out.Values[i] = ec._SlackAlertTemplateExample_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var slackAlertTemplatePreviewImplementors = []string{"SlackAlertTemplatePreview"}
+
+func (ec *executionContext) _SlackAlertTemplatePreview(ctx context.Context, sel ast.SelectionSet, obj *SlackAlertTemplatePreview) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slackAlertTemplatePreviewImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlackAlertTemplatePreview")
+		case "title":
+			out.Values[i] = ec._SlackAlertTemplatePreview_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "text":
+			out.Values[i] = ec._SlackAlertTemplatePreview_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "buttons":
+			out.Values[i] = ec._SlackAlertTemplatePreview_buttons(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "truncated":
+			out.Values[i] = ec._SlackAlertTemplatePreview_truncated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var slackAlertTemplatePreviewButtonImplementors = []string{"SlackAlertTemplatePreviewButton"}
+
+func (ec *executionContext) _SlackAlertTemplatePreviewButton(ctx context.Context, sel ast.SelectionSet, obj *SlackAlertTemplatePreviewButton) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slackAlertTemplatePreviewButtonImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlackAlertTemplatePreviewButton")
+		case "label":
+			out.Values[i] = ec._SlackAlertTemplatePreviewButton_label(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "url":
+			out.Values[i] = ec._SlackAlertTemplatePreviewButton_url(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(min(len(deferred), math.MaxInt32)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var slackAlertTemplatePreviewSampleImplementors = []string{"SlackAlertTemplatePreviewSample"}
+
+func (ec *executionContext) _SlackAlertTemplatePreviewSample(ctx context.Context, sel ast.SelectionSet, obj *SlackAlertTemplatePreviewSample) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, slackAlertTemplatePreviewSampleImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SlackAlertTemplatePreviewSample")
+		case "id":
+			out.Values[i] = ec._SlackAlertTemplatePreviewSample_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._SlackAlertTemplatePreviewSample_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -39781,6 +41515,11 @@ func (ec *executionContext) unmarshalNCreateServiceInput2githubᚗcomᚋtarget�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNCreateSlackAlertTemplateInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐCreateSlackAlertTemplateInput(ctx context.Context, v any) (CreateSlackAlertTemplateInput, error) {
+	res, err := ec.unmarshalInputCreateSlackAlertTemplateInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNCreateUserCalendarSubscriptionInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐCreateUserCalendarSubscriptionInput(ctx context.Context, v any) (CreateUserCalendarSubscriptionInput, error) {
 	res, err := ec.unmarshalInputCreateUserCalendarSubscriptionInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -40877,6 +42616,11 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋtargetᚋgoalert�
 	return ec._PageInfo(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNPreviewSlackAlertTemplateInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐPreviewSlackAlertTemplateInput(ctx context.Context, v any) (PreviewSlackAlertTemplateInput, error) {
+	res, err := ec.unmarshalInputPreviewSlackAlertTemplateInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNRotation2githubᚗcomᚋtargetᚋgoalertᚋscheduleᚋrotationᚐRotation(ctx context.Context, sel ast.SelectionSet, v rotation.Rotation) graphql.Marshaler {
 	return ec._Rotation(ctx, sel, &v)
 }
@@ -41182,9 +42926,118 @@ func (ec *executionContext) unmarshalNSetScheduleShiftInput2ᚕgithubᚗcomᚋta
 	return res, nil
 }
 
+func (ec *executionContext) unmarshalNSetServiceSlackAlertTemplateInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSetServiceSlackAlertTemplateInput(ctx context.Context, v any) (SetServiceSlackAlertTemplateInput, error) {
+	res, err := ec.unmarshalInputSetServiceSlackAlertTemplateInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNSetTemporaryScheduleInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSetTemporaryScheduleInput(ctx context.Context, v any) (SetTemporaryScheduleInput, error) {
 	res, err := ec.unmarshalInputSetTemporaryScheduleInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplate2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplate(ctx context.Context, sel ast.SelectionSet, v SlackAlertTemplate) graphql.Marshaler {
+	return ec._SlackAlertTemplate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplate2ᚕgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplateᚄ(ctx context.Context, sel ast.SelectionSet, v []SlackAlertTemplate) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNSlackAlertTemplate2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplate(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplate2ᚖgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplate(ctx context.Context, sel ast.SelectionSet, v *SlackAlertTemplate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SlackAlertTemplate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplateExample2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplateExample(ctx context.Context, sel ast.SelectionSet, v SlackAlertTemplateExample) graphql.Marshaler {
+	return ec._SlackAlertTemplateExample(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplateExample2ᚕgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplateExampleᚄ(ctx context.Context, sel ast.SelectionSet, v []SlackAlertTemplateExample) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNSlackAlertTemplateExample2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplateExample(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplatePreview2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreview(ctx context.Context, sel ast.SelectionSet, v SlackAlertTemplatePreview) graphql.Marshaler {
+	return ec._SlackAlertTemplatePreview(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplatePreview2ᚖgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreview(ctx context.Context, sel ast.SelectionSet, v *SlackAlertTemplatePreview) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._SlackAlertTemplatePreview(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplatePreviewButton2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreviewButton(ctx context.Context, sel ast.SelectionSet, v SlackAlertTemplatePreviewButton) graphql.Marshaler {
+	return ec._SlackAlertTemplatePreviewButton(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplatePreviewButton2ᚕgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreviewButtonᚄ(ctx context.Context, sel ast.SelectionSet, v []SlackAlertTemplatePreviewButton) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNSlackAlertTemplatePreviewButton2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreviewButton(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplatePreviewSample2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreviewSample(ctx context.Context, sel ast.SelectionSet, v SlackAlertTemplatePreviewSample) graphql.Marshaler {
+	return ec._SlackAlertTemplatePreviewSample(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNSlackAlertTemplatePreviewSample2ᚕgithubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreviewSampleᚄ(ctx context.Context, sel ast.SelectionSet, v []SlackAlertTemplatePreviewSample) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNSlackAlertTemplatePreviewSample2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐSlackAlertTemplatePreviewSample(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNSlackChannel2githubᚗcomᚋtargetᚋgoalertᚋnotificationᚋslackᚐChannel(ctx context.Context, sel ast.SelectionSet, v slack.Channel) graphql.Marshaler {
@@ -41599,6 +43452,11 @@ func (ec *executionContext) unmarshalNUpdateScheduleInput2githubᚗcomᚋtarget�
 
 func (ec *executionContext) unmarshalNUpdateServiceInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐUpdateServiceInput(ctx context.Context, v any) (UpdateServiceInput, error) {
 	res, err := ec.unmarshalInputUpdateServiceInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUpdateSlackAlertTemplateInput2githubᚗcomᚋtargetᚋgoalertᚋgraphql2ᚐUpdateSlackAlertTemplateInput(ctx context.Context, v any) (UpdateSlackAlertTemplateInput, error) {
+	res, err := ec.unmarshalInputUpdateSlackAlertTemplateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

@@ -283,6 +283,12 @@ type CreateServiceInput struct {
 	NewHeartbeatMonitors []CreateHeartbeatMonitorInput `json:"newHeartbeatMonitors,omitempty"`
 }
 
+type CreateSlackAlertTemplateInput struct {
+	Name  string `json:"name"`
+	Title string `json:"title"`
+	Text  string `json:"text"`
+}
+
 type CreateUserCalendarSubscriptionInput struct {
 	Name            string `json:"name"`
 	ReminderMinutes []int  `json:"reminderMinutes,omitempty"`
@@ -604,6 +610,17 @@ type PhoneNumberInfo struct {
 	Error       string `json:"error"`
 }
 
+type PreviewSlackAlertTemplateInput struct {
+	Title string `json:"title"`
+	Text  string `json:"text"`
+	// ID of a built-in sample. Ignored when alertmanagerPayload is set.
+	SampleID *string `json:"sampleID,omitempty"`
+	// Optional Alertmanager webhook JSON to preview with instead of a sample.
+	AlertmanagerPayload *string `json:"alertmanagerPayload,omitempty"`
+	// Alert status to render. Defaults to StatusUnacknowledged.
+	Status *AlertStatus `json:"status,omitempty"`
+}
+
 type Query struct {
 }
 
@@ -742,6 +759,12 @@ type SetScheduleOnCallNotificationRulesInput struct {
 	Rules      []OnCallNotificationRuleInput `json:"rules"`
 }
 
+type SetServiceSlackAlertTemplateInput struct {
+	ServiceID string `json:"serviceID"`
+	// Template to use, or null to use the existing/default formatting.
+	TemplateID *string `json:"templateID,omitempty"`
+}
+
 type SetTemporaryScheduleInput struct {
 	ScheduleID string                `json:"scheduleID"`
 	ClearStart *time.Time            `json:"clearStart,omitempty"`
@@ -749,6 +772,43 @@ type SetTemporaryScheduleInput struct {
 	Start      time.Time             `json:"start"`
 	End        time.Time             `json:"end"`
 	Shifts     []schedule.FixedShift `json:"shifts"`
+}
+
+type SlackAlertTemplate struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Title string `json:"title"`
+	Text  string `json:"text"`
+	// Changes whenever the name, title or body changes. Pass it as expectedRevision when updating.
+	Revision string `json:"revision"`
+	// Existing services that use this template.
+	Services []service.Service `json:"services"`
+}
+
+type SlackAlertTemplateExample struct {
+	Key         string `json:"key"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Title       string `json:"title"`
+	Text        string `json:"text"`
+}
+
+type SlackAlertTemplatePreview struct {
+	Title   string                            `json:"title"`
+	Text    string                            `json:"text"`
+	Buttons []SlackAlertTemplatePreviewButton `json:"buttons"`
+	// True when the body exceeded Slack's limit and was shortened.
+	Truncated bool `json:"truncated"`
+}
+
+type SlackAlertTemplatePreviewButton struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
+}
+
+type SlackAlertTemplatePreviewSample struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type SlackChannelConnection struct {
@@ -919,6 +979,15 @@ type UpdateServiceInput struct {
 	Description          *string    `json:"description,omitempty"`
 	EscalationPolicyID   *string    `json:"escalationPolicyID,omitempty"`
 	MaintenanceExpiresAt *time.Time `json:"maintenanceExpiresAt,omitempty"`
+}
+
+type UpdateSlackAlertTemplateInput struct {
+	ID string `json:"id"`
+	// The revision the editor loaded. The update fails if the template changed since.
+	ExpectedRevision string  `json:"expectedRevision"`
+	Name             *string `json:"name,omitempty"`
+	Title            *string `json:"title,omitempty"`
+	Text             *string `json:"text,omitempty"`
 }
 
 type UpdateUserCalendarSubscriptionInput struct {

@@ -64,7 +64,7 @@ func (s *ChannelSender) ServeMessageAction(w http.ResponseWriter, req *http.Requ
 	ctx := req.Context()
 	cfg := config.FromContext(ctx)
 
-	if !cfg.Slack.InteractiveMessages && !richAlertsEnabled(cfg) {
+	if !slackActionsEnabled(cfg) {
 		http.Error(w, "not enabled", http.StatusNotFound)
 		return
 	}
