@@ -25,6 +25,14 @@ import Spinner from '../loading/components/Spinner'
 import { GenericError } from '../error-pages'
 import { ConfigValue, ConfigHint } from '../../schema'
 import SlackActions from './SlackActions'
+import AppLink from '../util/AppLink'
+
+// Config values that have their own admin UI and should not be edited as raw
+// text here.
+const managedElsewhere = [
+  'Slack.AlertTemplateLibrary',
+  'Slack.ServiceAlertTemplates',
+]
 
 const query = gql`
   query getConfig {
@@ -215,7 +223,9 @@ export default function AdminConfig(): React.JSX.Element {
                   }
                   fields={configValues
                     .filter(
-                      (f: ConfigValue) => f.id.split('.')[0] === groups[index],
+                      (f: ConfigValue) =>
+                        f.id.split('.')[0] === groups[index] &&
+                        !managedElsewhere.includes(f.id),
                     )
                     .map((f: ConfigValue) => ({
                       id: f.id,
@@ -246,6 +256,14 @@ export default function AdminConfig(): React.JSX.Element {
                     fullWidth
                   />
                 ))}
+              {groupID === 'Slack' && (
+                <Typography sx={{ px: 2, pb: 1 }}>
+                  Named Slack templates and per-service assignments are managed
+                  in{' '}
+                  <AppLink to='/admin/slack-templates'>Slack Templates</AppLink>
+                  .
+                </Typography>
+              )}
               {groupID === 'Slack' && <SlackActions />}
             </AccordionDetails>
           </Accordion>

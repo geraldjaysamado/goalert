@@ -6,6 +6,10 @@ import ServiceForm from './ServiceForm'
 import { Label } from '../../schema'
 import { useErrorConsumer } from '../util/ErrorConsumer'
 import { useConfigValue } from '../util/RequireConfig'
+import {
+  ServiceSlackTemplateField,
+  useServiceSlackTemplate,
+} from './ServiceSlackTemplate'
 
 interface Value {
   name: string
@@ -36,6 +40,13 @@ const mutation = gql`
     updateService(input: $input)
   }
 `
+const setSlackTemplate = gql`
+  mutation setServiceSlackAlertTemplate(
+    $input: SetServiceSlackAlertTemplateInput!
+  ) {
+    setServiceSlackAlertTemplate(input: $input)
+  }
+`
 const setLabel = gql`
   mutation setLabel($input: SetLabelInput!) {
     setLabel(input: $input)
@@ -64,13 +75,23 @@ export default function ServiceEditDialog(props: {
   const [saveStatus, save] = useMutation(mutation)
   const [saveLabelStatus, saveLabel] = useMutation(setLabel)
 
-  const errs = useErrorConsumer(saveStatus.error).append(saveLabelStatus.error)
-  console.log()
+  // Slack template selection (admins only). undefined = not changed.
+  const slackTemplate = useServiceSlackTemplate(props.serviceID)
+  const [slackTemplateID, setSlackTemplateID] = useState<string | undefined>()
+  const [saveSlackStatus, saveSlack] = useMutation(setSlackTemplate)
+
+  const errs = useErrorConsumer(saveStatus.error)
+    .append(saveLabelStatus.error)
+    .append(saveSlackStatus.error)
+  const slackTemplateErr =
+    errs.getErrorByField('templateID') ||
+    errs.getErrorByField(/^Slack\./) ||
+    undefined
 
   return (
     <FormDialog
       title='Edit Service'
-      loading={saveStatus.fetching}
+      loading={saveStatus.fetching || saveSlackStatus.fetching}
       errors={errs.remainingLegacyCallback()}
       onClose={props.onClose}
       onSubmit={async () => {
@@ -103,20 +124,50 @@ export default function ServiceEditDialog(props: {
           if (res.error) return
         }
 
+        if (
+          slackTemplate.isAdmin &&
+          slackTemplateID !== undefined &&
+          slackTemplateID !== slackTemplate.currentID
+        ) {
+          const res = await saveSlack(
+            {
+              input: {
+                serviceID: props.serviceID,
+                templateID: slackTemplateID || null,
+              },
+            },
+            { additionalTypenames: ['SlackAlertTemplate'] },
+          )
+          if (res.error) return
+        }
+
         props.onClose()
       }}
       form={
-        <ServiceForm
-          epRequired
-          nameError={errs.getErrorByField('Name')}
-          descError={errs.getErrorByField('Description')}
-          epError={errs.getErrorByField('EscalationPolicyID')}
-          labelErrorKey={saveLabelStatus.operation?.variables?.input?.key}
-          labelErrorMsg={errs.getErrorByField('Value')}
-          disabled={Boolean(saveStatus.fetching || !data || dataError)}
-          value={value}
-          onChange={(value) => setValue(value)}
-        />
+        <React.Fragment>
+          <ServiceForm
+            epRequired
+            nameError={errs.getErrorByField('Name')}
+            descError={errs.getErrorByField('Description')}
+            epError={errs.getErrorByField('EscalationPolicyID')}
+            labelErrorKey={saveLabelStatus.operation?.variables?.input?.key}
+            labelErrorMsg={errs.getErrorByField('Value')}
+            disabled={Boolean(saveStatus.fetching || !data || dataError)}
+            value={value}
+            onChange={(value) => setValue(value)}
+          />
+          {slackTemplate.isAdmin && (
+            <div style={{ marginTop: 16 }}>
+              <ServiceSlackTemplateField
+                state={slackTemplate}
+                value={slackTemplateID ?? slackTemplate.currentID}
+                onChange={setSlackTemplateID}
+                disabled={Boolean(saveStatus.fetching || !data || dataError)}
+                error={slackTemplateErr}
+              />
+            </div>
+          )}
+        </React.Fragment>
       }
     />
   )

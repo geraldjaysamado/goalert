@@ -16,6 +16,7 @@ import AppLink from '../util/AppLink'
 import { ServiceAvatar } from '../util/avatars'
 import ServiceMaintenanceModeDialog from './ServiceMaintenanceDialog'
 import ServiceNotices from './ServiceNotices'
+import { ServiceSlackTemplateInfo } from './ServiceSlackTemplate'
 import type { HeartbeatMonitor, Label } from '../../schema'
 import ServiceRecentEvents from './ServiceRecentEvents'
 
@@ -121,6 +122,7 @@ export default function ServiceDetails(props: {
             ) : (
               <Spinner text='Looking up policy...' />
             )}
+            <ServiceSlackTemplateInfo serviceID={serviceID} />
           </React.Fragment>
         }
         details={data.service.description}

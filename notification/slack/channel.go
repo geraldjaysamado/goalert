@@ -493,7 +493,7 @@ func (s *ChannelSender) SendMessage(ctx context.Context, msg notification.Messag
 			break
 		}
 
-		title, text, buttons, err := renderAlertTemplates(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Meta, "Unacknowledged", notification.AlertStateUnacknowledged)
+		title, text, buttons, err := renderAlertTemplates(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Source, t.Meta, "Unacknowledged", notification.AlertStateUnacknowledged)
 		if err != nil {
 			return nil, err
 		}
@@ -502,7 +502,7 @@ func (s *ChannelSender) SendMessage(ctx context.Context, msg notification.Messag
 		isUpdate = true
 		var ts string
 		channelID, ts = chanTS(channelID, t.OriginalStatus.ProviderMessageID.ExternalID)
-		title, text, buttons, err := renderAlertTemplates(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Meta, t.LogEntry, t.NewAlertState)
+		title, text, buttons, err := renderAlertTemplates(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Source, t.Meta, t.LogEntry, t.NewAlertState)
 		if err != nil {
 			return nil, err
 		}

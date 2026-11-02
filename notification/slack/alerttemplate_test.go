@@ -16,7 +16,7 @@ func TestRenderAlertTemplates_Default(t *testing.T) {
 	var cfg config.Config
 	ctx := cfg.Context(context.Background())
 
-	title, text, buttons, err := renderAlertTemplates(ctx, 42, "queue down", "details", "svc-id", "service", nil, "Unacknowledged", notification.AlertStateUnacknowledged)
+	title, text, buttons, err := renderAlertTemplates(ctx, 42, "queue down", "details", "svc-id", "service", "", nil, "Unacknowledged", notification.AlertStateUnacknowledged)
 	require.NoError(t, err)
 	assert.Equal(t, "Alert #42: queue down", title)
 	assert.Empty(t, text)
@@ -51,7 +51,7 @@ func TestRenderAlertTemplates_AlertmanagerData(t *testing.T) {
 *GoAlert:* {{ .GoAlertStatus }}`
 	ctx := cfg.Context(context.Background())
 
-	title, text, buttons, err := renderAlertTemplates(ctx, 42, "queue down", "details", "svc-id", "service", meta, "Unacknowledged", notification.AlertStateUnacknowledged)
+	title, text, buttons, err := renderAlertTemplates(ctx, 42, "queue down", "details", "svc-id", "service", "", meta, "Unacknowledged", notification.AlertStateUnacknowledged)
 	require.NoError(t, err)
 	assert.Equal(t, "[PROBLEM:1] QueueDown", title)
 	assert.Equal(t, "*Summary:* queue is down\n*Severity:* critical\n*Description:* No workers are available\n*GoAlert:* unacknowledged", text)
@@ -60,7 +60,7 @@ func TestRenderAlertTemplates_AlertmanagerData(t *testing.T) {
 		{ActionID: alertRunbookActionID, Label: "Runbook 📖", URL: "https://example.com/runbook"},
 	}, buttons)
 
-	title, text, buttons, err = renderAlertTemplates(ctx, 42, "queue down", "details", "svc-id", "service", meta, "Closed", notification.AlertStateClosed)
+	title, text, buttons, err = renderAlertTemplates(ctx, 42, "queue down", "details", "svc-id", "service", "", meta, "Closed", notification.AlertStateClosed)
 	require.NoError(t, err)
 	assert.Equal(t, "[RESOLVED] QueueDown", title)
 	assert.Equal(t, "*Summary:* queue is down\n*Severity:* critical\n*Description:* No workers are available\n*GoAlert:* closed", text)
@@ -87,7 +87,7 @@ func TestRenderAlertTemplates_RichDefault(t *testing.T) {
 	var cfg config.Config
 	cfg.Slack.RichAlerts = true
 	ctx := cfg.Context(context.Background())
-	title, text, buttons, err := renderAlertTemplates(ctx, 99, "Celery queue backlog (critical, prod)", "details", "svc-id", "service", map[string]string{slacktmpl.MetadataKey: string(raw)}, "Unacknowledged", notification.AlertStateUnacknowledged)
+	title, text, buttons, err := renderAlertTemplates(ctx, 99, "Celery queue backlog (critical, prod)", "details", "svc-id", "service", "", map[string]string{slacktmpl.MetadataKey: string(raw)}, "Unacknowledged", notification.AlertStateUnacknowledged)
 	require.NoError(t, err)
 	assert.Equal(t, "[PROBLEM:1] Celery_Queue_Backlog_Critical_PROD", title)
 	assert.Contains(t, text, "*Severity:* `Critical`")
@@ -99,7 +99,7 @@ func TestRenderAlertTemplates_RichDefault(t *testing.T) {
 	assert.Contains(t, text, "*queue:* l_priority")
 	require.Len(t, buttons, 2)
 
-	title, text, buttons, err = renderAlertTemplates(ctx, 99, "Celery queue backlog (critical, prod)", "details", "svc-id", "service", map[string]string{slacktmpl.MetadataKey: string(raw)}, "Closed", notification.AlertStateClosed)
+	title, text, buttons, err = renderAlertTemplates(ctx, 99, "Celery queue backlog (critical, prod)", "details", "svc-id", "service", "", map[string]string{slacktmpl.MetadataKey: string(raw)}, "Closed", notification.AlertStateClosed)
 	require.NoError(t, err)
 	assert.Equal(t, "[RESOLVED] Celery_Queue_Backlog_Critical_PROD", title)
 	assert.Contains(t, text, "*app:* playbookregistration")
@@ -129,7 +129,7 @@ func TestRenderAlertTemplates_FlexibleLabels(t *testing.T) {
 		var cfg config.Config
 		cfg.Slack.TextTemplate = `environment={{ .Meta.environment }} owner={{ .Meta.owner }}`
 
-		_, text, _, err := renderAlertTemplates(cfg.Context(context.Background()), 1, "queue down", "details", "svc-id", "service", meta, "Unacknowledged", notification.AlertStateUnacknowledged)
+		_, text, _, err := renderAlertTemplates(cfg.Context(context.Background()), 1, "queue down", "details", "svc-id", "service", "", meta, "Unacknowledged", notification.AlertStateUnacknowledged)
 		require.NoError(t, err)
 		assert.Equal(t, "environment=production owner=platform", text)
 	})
@@ -139,7 +139,7 @@ func TestRenderAlertTemplates_FlexibleLabels(t *testing.T) {
 		cfg.Slack.TextTemplate = `{{ range .Meta.SortedPairs }}{{ .Name }}={{ .Value }}
 {{ end }}`
 
-		_, text, _, err := renderAlertTemplates(cfg.Context(context.Background()), 1, "queue down", "details", "svc-id", "service", meta, "Unacknowledged", notification.AlertStateUnacknowledged)
+		_, text, _, err := renderAlertTemplates(cfg.Context(context.Background()), 1, "queue down", "details", "svc-id", "service", "", meta, "Unacknowledged", notification.AlertStateUnacknowledged)
 		require.NoError(t, err)
 		assert.Equal(t, "alertname=QueueDown\napp=worker\ndescription=No workers are available\nenvironment=production\nowner=platform\nseverity=critical", text)
 	})
@@ -151,7 +151,7 @@ func TestRenderAlertTemplates_NonAlertmanagerFallback(t *testing.T) {
 	cfg.Slack.TextTemplate = `{{ .Meta.description }}`
 	ctx := cfg.Context(context.Background())
 
-	title, text, buttons, err := renderAlertTemplates(ctx, 7, "manual alert", "manual details", "svc-id", "service", nil, "Acknowledged", notification.AlertStateAcknowledged)
+	title, text, buttons, err := renderAlertTemplates(ctx, 7, "manual alert", "manual details", "svc-id", "service", "", nil, "Acknowledged", notification.AlertStateAcknowledged)
 	require.NoError(t, err)
 	assert.Equal(t, "manual alert", title)
 	assert.Equal(t, "manual details", text)

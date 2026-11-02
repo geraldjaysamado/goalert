@@ -1,0 +1,92 @@
+{{- /*
+  Infrastructure — Clear
+  Shows the affected Kubernetes resource(s) instead of raw label dumps.
+  Only values present in the alert are shown; nothing is inferred.
+
+  - kube-state-metrics: when exported_namespace is present, the plain
+    namespace/pod/container/node/job/instance labels describe the scraper,
+    so k8sResource uses only the exported_* values.
+  - Grouped notifications list each received alert. .MaxListedAlerts is lowered
+    by GoAlert until the message fits Slack's limit; the rest are counted.
+  - .TruncatedAlerts are alerts Alertmanager left out of the webhook; GoAlert
+    never received them, so they are only counted (with an Alertmanager link
+    when the payload has a valid externalURL).
+  - Without a usable full payload ("metadata-only" or "unreadable"), only the
+    flattened values in .AlertMeta are used; for groups these are values
+    shared by all alerts. The reason is not recorded, so none is claimed.
+  - Ordinary alerts ("none"): summary/details plus any resource labels found
+    in the alert's metadata.
+*/ -}}
+
+{{- define "detail" -}}
+{{- /* dict: L labels, A annotations, Closed bool */ -}}
+{{- $r := k8sResource .L -}}
+{{- with $r.Cluster }}*Cluster:* {{ slackEscape . }}
+{{ end -}}
+{{- with $r.Namespace }}*Namespace:* {{ slackEscape . }}
+{{ end -}}
+{{- if $r.IsWorkload }}*Workload:* {{ slackEscape $r.Name }} ({{ $r.Kind }})
+{{ end -}}
+{{- with $r.Pod }}*Pod:* {{ slackEscape . }}{{ with $r.Container }} (container {{ slackEscape . }}){{ end }}
+{{ end -}}
+{{- with $r.PVC }}*PVC:* {{ slackEscape . }}
+{{ end -}}
+{{- with $r.Node }}*Node:* {{ slackEscape . }}
+{{ end -}}
+{{- if eq $r.Kind "Target" }}*Target:* {{ slackEscape $r.Name }}{{ with $r.Instance }} ({{ slackEscape . }}){{ end }}
+{{ end -}}
+{{- with coalesce .A.state .A.value_used }}*{{ if $.Closed }}Last reported state{{ else }}State{{ end }}:* {{ slackEscape (truncate 300 .) }}
+{{ end -}}
+{{- with .A.description }}{{ if ne . $.A.summary }}*Details:* {{ slackEscape (truncate 500 .) }}
+{{ end }}{{ end -}}
+{{- if not .Closed }}{{ with .A.next_check }}*Next check:* {{ slackEscape (truncate 300 .) }}
+{{ else }}{{ if safeURL .A.runbook_url }}*Next check:* follow the runbook
+{{ end }}{{ end }}{{ end -}}
+{{- with safeURL .A.dashboard_url }}*Link:* <{{ . }}|{{ slackEscape (truncate 80 (coalesce $.A.dashboard_label "Open in Grafana")) }}>
+{{ end -}}
+{{- end -}}
+
+{{- $closed := eq .GoAlertStatus "closed" -}}
+
+{{- if or (eq .AlertmanagerDataState "metadata-only") (eq .AlertmanagerDataState "unreadable") -}}
+_{{ if eq .AlertmanagerDataState "unreadable" }}The stored alert payload could not be read{{ else }}Per-alert details are not available for this alert{{ end }}, so only its stored labels are shown. For a grouped notification these are the values shared by every alert, so it may cover more than one resource._
+{{ template "detail" (dict "L" .AlertMeta "A" .AlertMeta "Closed" $closed) -}}
+<{{ .AlertURL }}|Open the alert in GoAlert> for the received details.
+
+{{- else if eq .AlertmanagerDataState "none" -}}
+{{- $a := index .Alerts 0 -}}
+{{ template "detail" (dict "L" .AlertMeta "A" $a.Annotations "Closed" $closed) -}}
+
+{{- else if and (eq (len .Alerts) 1) (eq .TruncatedAlerts 0) -}}
+{{- $a := index .Alerts 0 -}}
+{{ template "detail" (dict "L" $a.Labels "A" $a.Annotations "Closed" $closed) -}}
+
+{{- else -}}
+{{- $received := len .Alerts -}}
+{{- $common := k8sResource .CommonLabels -}}
+{{- with $common.Cluster }}*Cluster:* {{ slackEscape . }}
+{{ end -}}
+*Affected resources ({{ add $received .TruncatedAlerts }}{{ if gt .TruncatedAlerts 0 }}; {{ $received }} received{{ end }})*
+{{ $shown := firstN .MaxListedAlerts .Alerts -}}
+{{- range $shown -}}
+{{- $r := k8sResource .Labels -}}
+• {{ if and $r.Cluster (ne $r.Cluster $common.Cluster) }}[{{ slackEscape $r.Cluster }}] {{ end -}}
+{{- with .Labels.severity }}{{ if ne . $.CommonLabels.severity }}{{ toUpper . }} {{ end }}{{ end -}}
+{{- with $r.Namespace }}{{ slackEscape . }} / {{ end -}}
+{{- if $r.Kind }}{{ $r.Kind }} {{ slackEscape $r.Name }}{{ if and (eq $r.Kind "Target") $r.Instance }} ({{ slackEscape $r.Instance }}){{ end }}{{ else }}{{ slackEscape (coalesce .Labels.alertname "alert") }}{{ end -}}
+{{- with coalesce .Annotations.state .Annotations.value_used }} — {{ slackEscape (truncate 150 .) }}{{ end -}}
+{{- with .Annotations.summary }}{{ if ne . $.CommonAnnotations.summary }} — {{ slackEscape (truncate 150 .) }}{{ end }}{{ end -}}
+{{- if and (eq .Status "resolved") (not $closed) }} (resolved){{ end -}}
+{{- with safeURL .Annotations.dashboard_url }}{{ if ne . $.CommonAnnotations.dashboard_url }} <{{ . }}|Grafana>{{ end }}{{ end }}
+{{ end -}}
+{{- $notShown := sub $received (len $shown) -}}
+{{- if gt $notShown 0 }}…and {{ $notShown }} more received alert{{ if gt $notShown 1 }}s{{ end }} not shown (Slack length limit). <{{ .AlertURL }}|Open the alert in GoAlert>
+{{ end -}}
+{{- if gt .TruncatedAlerts 0 }}Alertmanager left out {{ .TruncatedAlerts }} more alert{{ if gt .TruncatedAlerts 1 }}s{{ end }} from this notification (max_alerts), so GoAlert has no details for {{ if gt .TruncatedAlerts 1 }}them{{ else }}it{{ end }}.{{ with .AlertmanagerAlertsURL }} <{{ . }}|View the group in Alertmanager>{{ end }}
+{{ end -}}
+{{- if not $closed }}{{ with .CommonAnnotations.next_check }}*Next check:* {{ slackEscape (truncate 300 .) }}
+{{ else }}{{ if safeURL .CommonAnnotations.runbook_url }}*Next check:* follow the runbook
+{{ end }}{{ end }}{{ end -}}
+{{- with safeURL .CommonAnnotations.dashboard_url }}*Link:* <{{ . }}|{{ slackEscape (truncate 80 (coalesce $.CommonAnnotations.dashboard_label "Open in Grafana")) }}>
+{{ end -}}
+{{- end -}}

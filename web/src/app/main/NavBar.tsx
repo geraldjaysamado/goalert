@@ -109,6 +109,10 @@ export default function NavBar(): React.JSX.Element {
               />
               <NavBarSubLink to='/admin/switchover' title='Switchover' />
               <NavBarSubLink to='/admin/api-keys' title='API Keys' />
+              <NavBarSubLink
+                to='/admin/slack-templates'
+                title='Slack Templates'
+              />
               {localDevRiver}
             </NavBarLink>
           </RequireConfig>

@@ -313,6 +313,12 @@ export interface CreateServiceInput {
   newIntegrationKeys?: null | CreateIntegrationKeyInput[]
 }
 
+export interface CreateSlackAlertTemplateInput {
+  name: string
+  text: string
+  title: string
+}
+
 export interface CreateUserCalendarSubscriptionInput {
   disabled?: null | boolean
   fullSchedule?: null | boolean
@@ -774,6 +780,7 @@ export interface Mutation {
   createRotation?: null | Rotation
   createSchedule?: null | Schedule
   createService?: null | Service
+  createSlackAlertTemplate: SlackAlertTemplate
   createUser?: null | User
   createUserCalendarSubscription: UserCalendarSubscription
   createUserContactMethod?: null | UserContactMethod
@@ -785,6 +792,7 @@ export interface Mutation {
   deleteAuthSubject: boolean
   deleteGQLAPIKey: boolean
   deleteSecondaryToken: boolean
+  deleteSlackAlertTemplate: boolean
   endAllAuthSessionsByCurrentUser: boolean
   escalateAlerts?: null | Alert[]
   generateKeyToken: string
@@ -798,6 +806,7 @@ export interface Mutation {
   setFavorite: boolean
   setLabel: boolean
   setScheduleOnCallNotificationRules: boolean
+  setServiceSlackAlertTemplate: boolean
   setSystemLimits: boolean
   setTemporarySchedule: boolean
   swoAction: boolean
@@ -814,6 +823,7 @@ export interface Mutation {
   updateSchedule: boolean
   updateScheduleTarget: boolean
   updateService: boolean
+  updateSlackAlertTemplate: boolean
   updateUser: boolean
   updateUserCalendarSubscription: boolean
   updateUserContactMethod: boolean
@@ -888,6 +898,14 @@ export interface PhoneNumberInfo {
   valid: boolean
 }
 
+export interface PreviewSlackAlertTemplateInput {
+  alertmanagerPayload?: null | string
+  sampleID?: null | string
+  status?: null | AlertStatus
+  text: string
+  title: string
+}
+
 export interface Query {
   __schema: __Schema
   __type?: null | __Type
@@ -922,12 +940,16 @@ export interface Query {
   messageLogs: MessageLogConnection
   messageStatusHistory: MessageStatusHistory[]
   phoneNumberInfo?: null | PhoneNumberInfo
+  previewSlackAlertTemplate: SlackAlertTemplatePreview
   rotation?: null | Rotation
   rotations: RotationConnection
   schedule?: null | Schedule
   schedules: ScheduleConnection
   service?: null | Service
   services: ServiceConnection
+  slackAlertTemplateExamples: SlackAlertTemplateExample[]
+  slackAlertTemplatePreviewSamples: SlackAlertTemplatePreviewSample[]
+  slackAlertTemplates: SlackAlertTemplate[]
   slackChannel?: null | SlackChannel
   slackChannels: SlackChannelConnection
   slackUserGroup?: null | SlackUserGroup
@@ -1152,6 +1174,11 @@ export interface SetScheduleShiftInput {
   userID: string
 }
 
+export interface SetServiceSlackAlertTemplateInput {
+  serviceID: string
+  templateID?: null | string
+}
+
 export interface SetTemporaryScheduleInput {
   clearEnd?: null | ISOTimestamp
   clearStart?: null | ISOTimestamp
@@ -1159,6 +1186,40 @@ export interface SetTemporaryScheduleInput {
   scheduleID: string
   shifts: SetScheduleShiftInput[]
   start: ISOTimestamp
+}
+
+export interface SlackAlertTemplate {
+  id: string
+  name: string
+  revision: string
+  services: Service[]
+  text: string
+  title: string
+}
+
+export interface SlackAlertTemplateExample {
+  description: string
+  key: string
+  name: string
+  text: string
+  title: string
+}
+
+export interface SlackAlertTemplatePreview {
+  buttons: SlackAlertTemplatePreviewButton[]
+  text: string
+  title: string
+  truncated: boolean
+}
+
+export interface SlackAlertTemplatePreviewButton {
+  label: string
+  url: string
+}
+
+export interface SlackAlertTemplatePreviewSample {
+  id: string
+  name: string
 }
 
 export interface SlackChannel {
@@ -1388,6 +1449,14 @@ export interface UpdateServiceInput {
   id: string
   maintenanceExpiresAt?: null | ISOTimestamp
   name?: null | string
+}
+
+export interface UpdateSlackAlertTemplateInput {
+  expectedRevision: string
+  id: string
+  name?: null | string
+  text?: null | string
+  title?: null | string
 }
 
 export interface UpdateUserCalendarSubscriptionInput {
@@ -1674,6 +1743,11 @@ type ConfigID =
   | 'Slack.SigningSecret'
   | 'Slack.InteractiveMessages'
   | 'Slack.DisableBroadcastThreadReplies'
+  | 'Slack.RichAlerts'
+  | 'Slack.TitleTemplate'
+  | 'Slack.TextTemplate'
+  | 'Slack.AlertTemplateLibrary'
+  | 'Slack.ServiceAlertTemplates'
   | 'Twilio.Enable'
   | 'Twilio.VoiceName'
   | 'Twilio.VoiceLanguage'

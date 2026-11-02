@@ -72,6 +72,8 @@ func MapConfigValues(cfg config.Config) []ConfigValue {
 		{ID: "Slack.RichAlerts", Type: ConfigTypeBoolean, Description: "Enable rich Slack alerts. Empty templates use GoAlert's built-in rich layout.", Value: fmt.Sprintf("%t", cfg.Slack.RichAlerts)},
 		{ID: "Slack.TitleTemplate", Type: ConfigTypeString, Description: "Optional Go template for the Slack alert title. Alertmanager data includes .Status, .Alerts, .CommonLabels, .CommonAnnotations, and .Meta.", Value: cfg.Slack.TitleTemplate},
 		{ID: "Slack.TextTemplate", Type: ConfigTypeString, Description: "Optional Go template for the Slack alert body. Use .Meta.name for one label or annotation, or range .Meta.SortedPairs to display all available values.", Value: cfg.Slack.TextTemplate},
+		{ID: "Slack.AlertTemplateLibrary", Type: ConfigTypeString, Description: "Named Slack alert templates. Manage these from Admin > Slack Templates; do not edit by hand.", Value: cfg.Slack.AlertTemplateLibrary},
+		{ID: "Slack.ServiceAlertTemplates", Type: ConfigTypeStringList, Description: "Per-service Slack template assignments (serviceID=templateID). Manage these from the service edit dialog; do not edit by hand.", Value: strings.Join(cfg.Slack.ServiceAlertTemplates, "\n")},
 		{ID: "Twilio.Enable", Type: ConfigTypeBoolean, Description: "Enables sending and processing of Voice and SMS messages through the Twilio notification provider.", Value: fmt.Sprintf("%t", cfg.Twilio.Enable)},
 		{ID: "Twilio.VoiceName", Type: ConfigTypeString, Description: "The Twilio voice to use for Text To Speech for phone calls. See https://www.twilio.com/docs/voice/twiml/say/text-speech#polly-standard-and-neural-voices", Value: cfg.Twilio.VoiceName},
 		{ID: "Twilio.VoiceLanguage", Type: ConfigTypeString, Description: "The Twilio voice language to use for Text To Speech for phone calls. See https://www.twilio.com/docs/voice/twiml/say/text-speech#polly-standard-and-neural-voices", Value: cfg.Twilio.VoiceLanguage},
@@ -334,6 +336,10 @@ func ApplyConfigValues(cfg config.Config, vals []ConfigValueInput) (config.Confi
 			cfg.Slack.TitleTemplate = v.Value
 		case "Slack.TextTemplate":
 			cfg.Slack.TextTemplate = v.Value
+		case "Slack.AlertTemplateLibrary":
+			cfg.Slack.AlertTemplateLibrary = v.Value
+		case "Slack.ServiceAlertTemplates":
+			cfg.Slack.ServiceAlertTemplates = parseStringList(v.Value)
 		case "Twilio.Enable":
 			val, err := parseBool(v.ID, v.Value)
 			if err != nil {

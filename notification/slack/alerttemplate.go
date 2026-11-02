@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"unicode/utf8"
 
+	"github.com/target/goalert/alert"
 	"github.com/target/goalert/config"
 	"github.com/target/goalert/notification"
 	"github.com/target/goalert/notification/slacktmpl"
@@ -71,12 +73,15 @@ func fallbackAlertmanagerData(summary, details string, state notification.AlertS
 	}
 }
 
-func templateData(ctx context.Context, alertID int, summary, details, serviceID, serviceName string, meta map[string]string, logEntry string, state notification.AlertState) slacktmpl.Data {
+func templateData(ctx context.Context, alertID int, summary, details, serviceID, serviceName, source string, meta map[string]string, logEntry string, state notification.AlertState) slacktmpl.Data {
 	data := fallbackAlertmanagerData(summary, details, state)
+	dataState := "none"
 	stored, ok, err := slacktmpl.DecodeAlertmanagerData(meta)
 	if err != nil {
 		log.Log(ctx, err)
+		dataState = "unreadable"
 	} else if ok {
+		dataState = "complete"
 		data = stored
 		data.Status = alertmanagerStatus(state)
 		if state == notification.AlertStateClosed {
@@ -89,6 +94,21 @@ func templateData(ctx context.Context, alertID int, summary, details, serviceID,
 	for key, value := range meta {
 		if key != slacktmpl.MetadataKey {
 			templateMeta[key] = value
+		}
+	}
+	// Without a decodable payload, the alert's stored source decides whether
+	// this is an Alertmanager alert (whose payload was not stored, e.g. it
+	// exceeded the metadata size limit at ingestion, or the alert predates
+	// payload storage). Common metadata of a mixed-alertname group has no
+	// alertname, so labels alone cannot decide this. Only when the source is
+	// unknown is an alertname label used as a hint. Nothing records *why* a
+	// payload is missing, so templates must not claim a cause.
+	if dataState == "none" {
+		switch {
+		case source == string(alert.SourcePrometheusAlertmanager):
+			dataState = "metadata-only"
+		case source == "" && strings.TrimSpace(meta["alertname"]) != "":
+			dataState = "metadata-only"
 		}
 	}
 
@@ -105,6 +125,10 @@ func templateData(ctx context.Context, alertID int, summary, details, serviceID,
 		Meta:             slacktmpl.KV(templateMeta),
 		AlertMeta:        meta,
 		LogEntry:         logEntry,
+
+		Source:                source,
+		AlertmanagerDataState: dataState,
+		MaxListedAlerts:       len(data.Alerts),
 	}
 }
 
@@ -155,9 +179,60 @@ func richAlertsEnabled(cfg config.Config) bool {
 	return cfg.Slack.RichAlerts || cfg.Slack.TitleTemplate != "" || cfg.Slack.TextTemplate != ""
 }
 
-func renderAlertTemplates(ctx context.Context, alertID int, summary, details, serviceID, serviceName string, meta map[string]string, logEntry string, state notification.AlertState) (title, text string, buttons []alertTemplateButton, err error) {
+// slackActionsEnabled reports whether the Slack interaction endpoint should
+// accept requests. Assigned library templates can add link buttons, so they
+// enable it as well. This does not change how unassigned services render.
+func slackActionsEnabled(cfg config.Config) bool {
+	return cfg.Slack.InteractiveMessages || richAlertsEnabled(cfg) || len(cfg.Slack.ServiceAlertTemplates) > 0
+}
+
+// assignedTemplate returns the library template assigned to serviceID. Any
+// problem (bad stored data, template missing) is logged and reported as "no
+// assignment" so the caller uses the existing formatting instead of dropping
+// the notification.
+func assignedTemplate(ctx context.Context, cfg config.Config, serviceID string) (slacktmpl.LibraryTemplate, bool) {
+	if serviceID == "" || len(cfg.Slack.ServiceAlertTemplates) == 0 {
+		return slacktmpl.LibraryTemplate{}, false
+	}
+	ctx = log.WithField(ctx, "ServiceID", serviceID)
+	assignments, err := slacktmpl.ParseAssignments(cfg.Slack.ServiceAlertTemplates)
+	if err != nil {
+		log.Log(ctx, fmt.Errorf("slack template assignments unreadable, using default formatting: %w", err))
+		return slacktmpl.LibraryTemplate{}, false
+	}
+	templateID, ok := assignments.Lookup(serviceID)
+	if !ok {
+		return slacktmpl.LibraryTemplate{}, false
+	}
+	lib, err := slacktmpl.ParseLibrary(cfg.Slack.AlertTemplateLibrary)
+	if err != nil {
+		log.Log(ctx, fmt.Errorf("slack template library unreadable, using default formatting: %w", err))
+		return slacktmpl.LibraryTemplate{}, false
+	}
+	tmpl, ok := lib.Find(templateID)
+	if !ok {
+		log.Log(ctx, fmt.Errorf("assigned slack template %s not found, using default formatting", templateID))
+		return slacktmpl.LibraryTemplate{}, false
+	}
+	return tmpl, true
+}
+
+func renderAlertTemplates(ctx context.Context, alertID int, summary, details, serviceID, serviceName, source string, meta map[string]string, logEntry string, state notification.AlertState) (title, text string, buttons []alertTemplateButton, err error) {
 	cfg := config.FromContext(ctx)
-	data := templateData(ctx, alertID, summary, details, serviceID, serviceName, meta, logEntry, state)
+	data := templateData(ctx, alertID, summary, details, serviceID, serviceName, source, meta, logEntry, state)
+
+	if tmpl, ok := assignedTemplate(ctx, cfg, serviceID); ok {
+		title, text, buttons, _, err = renderLibraryTemplate(alertID, summary, tmpl.Title, tmpl.Text, data)
+		if err == nil {
+			return title, text, buttons, nil
+		}
+		log.Log(log.WithFields(ctx, log.Fields{
+			"ServiceID":         serviceID,
+			"SlackTemplateID":   tmpl.ID,
+			"SlackTemplateName": tmpl.Name,
+		}), fmt.Errorf("assigned slack template failed, using default formatting: %w", err))
+	}
+
 	richEnabled := richAlertsEnabled(cfg)
 	titleTemplate := cfg.Slack.TitleTemplate
 	textTemplate := cfg.Slack.TextTemplate
@@ -169,7 +244,21 @@ func renderAlertTemplates(ctx context.Context, alertID int, summary, details, se
 			textTemplate = defaultRichTextTemplate
 		}
 	}
+	return renderTemplatePair(alertID, summary, titleTemplate, textTemplate, data, richEnabled)
+}
 
+// renderTemplatePair renders a title/body pair. Behaviour for the shared
+// templates is identical to the original single-template implementation.
+func renderTemplatePair(alertID int, summary, titleTemplate, textTemplate string, data slacktmpl.Data, buttonsEnabled bool) (title, text string, buttons []alertTemplateButton, err error) {
+	title, text, buttons, err = renderTemplatePairRaw(alertID, summary, titleTemplate, textTemplate, data, buttonsEnabled)
+	if err != nil {
+		return "", "", nil, err
+	}
+	return title, truncateRunes(text, maxSlackTextLength), buttons, nil
+}
+
+// renderTemplatePairRaw renders without shortening the body.
+func renderTemplatePairRaw(alertID int, summary, titleTemplate, textTemplate string, data slacktmpl.Data, buttonsEnabled bool) (title, text string, buttons []alertTemplateButton, err error) {
 	title = fmt.Sprintf("Alert #%d: %s", alertID, summary)
 	if titleTemplate != "" {
 		title, err = slacktmpl.Render("slack-title", titleTemplate, data)
@@ -185,6 +274,80 @@ func renderAlertTemplates(ctx context.Context, alertID int, summary, details, se
 	if err != nil {
 		return "", "", nil, fmt.Errorf("render Slack text template: %w", err)
 	}
-	buttons = templateButtons(data, richEnabled)
-	return truncateRunes(title, maxSlackTitleLength), truncateRunes(text, maxSlackTextLength), buttons, nil
+	buttons = templateButtons(data, buttonsEnabled)
+	return truncateRunes(title, maxSlackTitleLength), text, buttons, nil
+}
+
+// shortenedNotice is appended when a library template's body still exceeds
+// Slack's limit after listing as few alerts as the template allows.
+const shortenedNotice = "\n_…message shortened to fit Slack's limit._"
+
+// renderLibraryTemplate renders an assigned library template so that the body
+// fits Slack's limit without cutting through lines or links:
+//
+//  1. Render with every alert listable (.MaxListedAlerts = len(.Alerts)).
+//  2. If too long, find the largest .MaxListedAlerts that fits, so the
+//     template itself drops whole entries and prints an accurate "N more"
+//     notice and links.
+//  3. Only if it still does not fit (e.g. one very long line), keep whole
+//     lines up to the limit and add a shortened notice (hardCut=true).
+//
+// The preview uses this same function, so it shows exactly what is sent.
+func renderLibraryTemplate(alertID int, summary, titleTemplate, textTemplate string, data slacktmpl.Data) (title, text string, buttons []alertTemplateButton, hardCut bool, err error) {
+	render := func(n int) (string, string, []alertTemplateButton, error) {
+		d := data
+		d.MaxListedAlerts = n
+		return renderTemplatePairRaw(alertID, summary, titleTemplate, textTemplate, d, true)
+	}
+	fits := func(s string) bool { return utf8.RuneCountInString(s) <= maxSlackTextLength }
+
+	total := len(data.Alerts)
+	title, text, buttons, err = render(total)
+	if err != nil || fits(text) {
+		return title, text, buttons, false, err
+	}
+
+	// Largest n in [0, total) whose output fits (output shrinks as n shrinks).
+	lo, hi, best := 0, total-1, -1
+	var bestTitle, bestText string
+	var bestButtons []alertTemplateButton
+	for lo <= hi {
+		mid := (lo + hi) / 2
+		t, x, b, rErr := render(mid)
+		if rErr != nil {
+			return "", "", nil, false, rErr
+		}
+		if fits(x) {
+			best, bestTitle, bestText, bestButtons = mid, t, x, b
+			lo = mid + 1
+		} else {
+			hi = mid - 1
+		}
+	}
+	if best >= 0 {
+		return bestTitle, bestText, bestButtons, false, nil
+	}
+
+	title, text, buttons, err = render(0)
+	if err != nil {
+		return "", "", nil, false, err
+	}
+	return title, cutAtLine(text, maxSlackTextLength-utf8.RuneCountInString(shortenedNotice)) + shortenedNotice, buttons, true, nil
+}
+
+// cutAtLine returns at most max runes of text, ending at a line break when
+// possible and never inside a Slack <...> link.
+func cutAtLine(text string, max int) string {
+	r := []rune(text)
+	if len(r) <= max {
+		return text
+	}
+	cut := string(r[:max])
+	if i := strings.LastIndex(cut, "\n"); i > 0 {
+		return strings.TrimRight(cut[:i], "\n")
+	}
+	if open, closed := strings.LastIndex(cut, "<"), strings.LastIndex(cut, ">"); open > closed {
+		cut = cut[:open]
+	}
+	return strings.TrimSpace(cut)
 }
