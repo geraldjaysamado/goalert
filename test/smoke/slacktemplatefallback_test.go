@@ -110,6 +110,6 @@ func TestSlackTemplateAlertmanagerMetadataFallback(t *testing.T) {
 	res = h.GraphQLQuery2(`mutation{ createAlert(input:{serviceID: "` + h.UUID("sid") + `", summary: "Manual check", details: "Raised by hand.",
 		meta: [{key: "alertname", value: "ManualCheck"}, {key: "namespace", value: "apps"}]}){ id } }`)
 	require.Empty(t, res.Errors)
-	manual := ch.ExpectMessage("ALERT — Manual check", "*Namespace:* apps", "*Details:* Raised by hand.")
+	manual := ch.ExpectMessage("ALERT — Manual check", "*Namespace:* apps", "*Description:* Raised by hand.")
 	manual.AssertNotText("Per-alert details", "may cover more than one resource")
 }

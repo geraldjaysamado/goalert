@@ -40,6 +40,8 @@ import { useIsWidthDown } from '../../util/useWidth'
 import ReactGA from 'react-ga4'
 import { useConfigValue } from '../../util/RequireConfig'
 import { renderChipsDest } from '../../escalation-policies/stepUtil'
+import { useAppearance } from '../../theme/useAppearance'
+import AlertStatusBadge from '../../theme/AlertStatusBadge'
 interface AlertDetailsProps {
   data: Alert
 }
@@ -80,6 +82,7 @@ export default function AlertDetails(
 ): React.JSX.Element {
   const [analyticsID] = useConfigValue('General.GoogleAnalyticsID') as [string]
   const classes = useStyles()
+  const isPlaybook = useAppearance() === 'playbook'
   const isMobile = useIsWidthDown('sm')
 
   const alertAction = (action: string, mutation: () => void): void => {
@@ -395,9 +398,16 @@ export default function AlertDetails(
                 </Typography>
               </Grid>
               <Grid item xs={12}>
-                <Typography variant='body1' data-cy='alert-status'>
-                  {alert.status.toUpperCase().replace('STATUS', '')}
-                </Typography>
+                {isPlaybook ? (
+                  <AlertStatusBadge
+                    status={alert.status}
+                    data-cy='alert-status'
+                  />
+                ) : (
+                  <Typography variant='body1' data-cy='alert-status'>
+                    {alert.status.toUpperCase().replace('STATUS', '')}
+                  </Typography>
+                )}
               </Grid>
             </Grid>
           </CardContent>

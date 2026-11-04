@@ -61,6 +61,8 @@ async function run() {
     loader: {
       '.png': 'file',
       '.webp': 'file',
+      '.woff': 'file',
+      '.woff2': 'file',
       '.js': 'jsx',
       '.svg': 'dataurl',
       '.md': 'text',

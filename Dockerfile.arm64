@@ -1,0 +1,31 @@
+ARG VERSION=v0.34.1-slack-templates-3-arm64
+
+FROM --platform=$BUILDPLATFORM oven/bun:1.3.14 AS frontend
+WORKDIR /src
+COPY . .
+ARG VERSION
+RUN bun install --frozen-lockfile --ignore-scripts
+RUN GOALERT_VERSION="$VERSION" bun web/src/esbuild.config.js
+
+FROM --platform=$BUILDPLATFORM golang:1.26.10 AS build
+WORKDIR /src
+COPY . .
+COPY --from=frontend /src/web/src/build /src/web/src/build
+ARG TARGETARCH
+ARG VERSION
+ENV CGO_ENABLED=0 GOOS=linux
+RUN sed -i 's/\r$//' timezone/zones.txt timezone/aliases.txt
+RUN mkdir -p /out && \
+    for app in goalert goalert-slack-email-sync; do \
+      GOARCH="$TARGETARCH" go build -buildvcs=false -trimpath \
+        -ldflags="-X github.com/target/goalert/version.gitVersion=$VERSION" \
+        -o "/out/$app" "./cmd/$app" || exit 1; \
+    done
+
+FROM alpine:3.24
+RUN apk --no-cache upgrade && apk --no-cache add ca-certificates
+COPY --from=build /out/ /usr/bin/
+ENV GOALERT_LISTEN=:8081
+EXPOSE 8081
+RUN /usr/bin/goalert self-test
+CMD ["/usr/bin/goalert"]

@@ -41,6 +41,7 @@ type ChannelSender struct {
 }
 
 const (
+	colorInfo    = "#1976d2"
 	colorClosed  = "#218626"
 	colorUnacked = "#862421"
 	colorAcked   = "#867321"
@@ -380,6 +381,10 @@ const (
 
 // alertMsgOption will return the slack.MsgOption for an alert-type message (e.g., notification or status update).
 func alertMsgOption(ctx context.Context, callbackID string, id int, title, text string, buttons []alertTemplateButton, logEntry string, state notification.AlertState) slack.MsgOption {
+	return alertMsgOptionWithColor(ctx, callbackID, id, title, text, buttons, logEntry, state, "")
+}
+
+func alertMsgOptionWithColor(ctx context.Context, callbackID string, id int, title, text string, buttons []alertTemplateButton, logEntry string, state notification.AlertState, colorOverride string) slack.MsgOption {
 	blocks := []slack.Block{
 		slack.NewSectionBlock(
 			slack.NewTextBlockObject("mrkdwn", alertLinkTitle(ctx, id, title), false, false), nil, nil),
@@ -400,11 +405,10 @@ func alertMsgOption(ctx context.Context, callbackID string, id int, title, text 
 		blocks = append(blocks, slack.NewActionBlock(alertLinksBlockID, elements...))
 	}
 
-	var color string
+	color := alertColor(state, colorOverride)
 	var actions []slack.Block
 	switch state {
 	case notification.AlertStateAcknowledged:
-		color = colorAcked
 		actions = []slack.Block{
 			slack.NewDividerBlock(),
 			slack.NewActionBlock(alertResponseBlockID,
@@ -412,7 +416,6 @@ func alertMsgOption(ctx context.Context, callbackID string, id int, title, text 
 			),
 		}
 	case notification.AlertStateUnacknowledged:
-		color = colorUnacked
 		actions = []slack.Block{
 			slack.NewDividerBlock(),
 			slack.NewActionBlock(alertResponseBlockID,
@@ -420,8 +423,6 @@ func alertMsgOption(ctx context.Context, callbackID string, id int, title, text 
 				slack.NewButtonBlockElement(alertCloseActionID, callbackID, slack.NewTextBlockObject("plain_text", "Close", false, false)),
 			),
 		}
-	case notification.AlertStateClosed:
-		color = colorClosed
 	}
 
 	blocks = append(blocks,
@@ -493,22 +494,22 @@ func (s *ChannelSender) SendMessage(ctx context.Context, msg notification.Messag
 			break
 		}
 
-		title, text, buttons, err := renderAlertTemplates(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Source, t.Meta, "Unacknowledged", notification.AlertStateUnacknowledged)
+		title, text, buttons, color, err := renderAlertMessage(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Source, t.Meta, "Unacknowledged", notification.AlertStateUnacknowledged)
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, alertMsgOption(ctx, t.MsgID(), t.AlertID, title, text, buttons, "Unacknowledged", notification.AlertStateUnacknowledged))
+		opts = append(opts, alertMsgOptionWithColor(ctx, t.MsgID(), t.AlertID, title, text, buttons, "Unacknowledged", notification.AlertStateUnacknowledged, color))
 	case notification.AlertStatus:
 		isUpdate = true
 		var ts string
 		channelID, ts = chanTS(channelID, t.OriginalStatus.ProviderMessageID.ExternalID)
-		title, text, buttons, err := renderAlertTemplates(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Source, t.Meta, t.LogEntry, t.NewAlertState)
+		title, text, buttons, color, err := renderAlertMessage(ctx, t.AlertID, t.Summary, t.Details, t.ServiceID, t.ServiceName, t.Source, t.Meta, t.LogEntry, t.NewAlertState)
 		if err != nil {
 			return nil, err
 		}
 		opts = append(opts,
 			slack.MsgOptionUpdate(ts),
-			alertMsgOption(ctx, t.OriginalStatus.ID, t.AlertID, title, text, buttons, t.LogEntry, t.NewAlertState),
+			alertMsgOptionWithColor(ctx, t.OriginalStatus.ID, t.AlertID, title, text, buttons, t.LogEntry, t.NewAlertState, color),
 		)
 	case notification.AlertBundle:
 		opts = append(opts, slack.MsgOptionText(

@@ -794,6 +794,7 @@ type SlackAlertTemplateExample struct {
 }
 
 type SlackAlertTemplatePreview struct {
+	Color   string                            `json:"color"`
 	Title   string                            `json:"title"`
 	Text    string                            `json:"text"`
 	Buttons []SlackAlertTemplatePreviewButton `json:"buttons"`

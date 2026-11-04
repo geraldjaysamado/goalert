@@ -17,11 +17,18 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandLess'
 import ExpandLessIcon from '@mui/icons-material/ExpandMore'
 import DefaultColorIcon from '@mui/icons-material/Circle'
 import PaletteIcon from '@mui/icons-material/Palette'
+import Typography from '@mui/material/Typography'
 import { ThemeContext } from './themeConfig'
 
 export default function ThemePicker(): JSX.Element {
-  const { themeMode, setThemeMode, sourceColor, setSourceColor } =
-    useContext(ThemeContext)
+  const {
+    themeMode,
+    setThemeMode,
+    sourceColor,
+    setSourceColor,
+    appearance,
+    setAppearance,
+  } = useContext(ThemeContext)
   const [showMore, setShowMore] = useState(false)
 
   const defaultSelected = sourceColor === blueGrey[500]
@@ -29,6 +36,25 @@ export default function ThemePicker(): JSX.Element {
 
   return (
     <Grid container direction='column' spacing={2}>
+      <Grid item>
+        <FormLabel id='appearance-style-label'>Style</FormLabel>
+      </Grid>
+      <Grid item>
+        <ToggleButtonGroup
+          color='primary'
+          value={appearance}
+          exclusive
+          aria-labelledby='appearance-style-label'
+          onChange={(_, v) => v && setAppearance(v)}
+        >
+          <ToggleButton value='existing' data-cy='appearance-existing'>
+            Existing
+          </ToggleButton>
+          <ToggleButton value='playbook' data-cy='appearance-playbook'>
+            Playbook
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Grid>
       <Grid item>
         <FormLabel>Appearance</FormLabel>
       </Grid>
@@ -123,6 +149,16 @@ export default function ThemePicker(): JSX.Element {
               />
             </ListItemButton>
           </List>
+          {appearance === 'playbook' && (
+            <Typography
+              variant='caption'
+              color='text.secondary'
+              sx={{ display: 'block', pt: 1 }}
+            >
+              The accent color applies to the Existing style. The Playbook style
+              uses its own brand colors.
+            </Typography>
+          )}
         </Collapse>
       </Grid>
     </Grid>

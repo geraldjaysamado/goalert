@@ -36,7 +36,10 @@ function ToolbarAction(props: ToolbarActionProps): React.JSX.Element {
         onClick={() => navigate(route)}
         size='large'
         sx={(theme: Theme) => ({
-          color: theme.palette.mode === 'light' ? 'white' : undefined,
+          color:
+            theme.palette.mode === 'light' && !theme.goalertAppearance
+              ? 'white'
+              : undefined,
         })}
       >
         <ChevronLeft />

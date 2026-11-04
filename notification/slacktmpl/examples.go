@@ -34,7 +34,7 @@ func Examples() []Example {
 	return []Example{{
 		Key:         "infrastructure-clear",
 		Name:        "Infrastructure — Clear",
-		Description: "Readable Kubernetes infrastructure alerts: severity, summary, cluster, namespace and the affected Deployment/StatefulSet/DaemonSet, pod, PVC, node or scrape target. Lists every resource in grouped notifications.",
+		Description: "Readable Kubernetes infrastructure alerts: severity, summary, a concise description, cluster, namespace and the affected Deployment/StatefulSet/DaemonSet, pod, PVC, node or scrape target. Lists every resource in grouped notifications.",
 		Title:       mustExampleFile("infrastructure-clear.title.tmpl"),
 		Text:        mustExampleFile("infrastructure-clear.text.tmpl"),
 	}}

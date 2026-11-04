@@ -188,7 +188,7 @@ func (q *Query) PreviewSlackAlertTemplate(ctx context.Context, input graphql2.Pr
 	if err != nil {
 		return nil, validation.NewFieldError("text", err.Error())
 	}
-	res := &graphql2.SlackAlertTemplatePreview{Title: p.Title, Text: p.Text, Truncated: p.Truncated, Buttons: []graphql2.SlackAlertTemplatePreviewButton{}}
+	res := &graphql2.SlackAlertTemplatePreview{Color: p.Color, Title: p.Title, Text: p.Text, Truncated: p.Truncated, Buttons: []graphql2.SlackAlertTemplatePreviewButton{}}
 	for _, b := range p.Buttons {
 		res.Buttons = append(res.Buttons, graphql2.SlackAlertTemplatePreviewButton{Label: b.Label, URL: b.URL})
 	}

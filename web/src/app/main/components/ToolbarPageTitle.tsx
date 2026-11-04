@@ -11,6 +11,8 @@ import { useIsWidthDown } from '../../util/useWidth'
 
 // todo: not needed once appbar is using same color prop for dark/light modes
 export const getContrastColor = (theme: Theme): string => {
+  // Playbook appearance: the app bar uses the paper color, so use text color.
+  if (theme.goalertAppearance === 'playbook') return theme.palette.text.primary
   return theme.palette.getContrastText(
     theme.palette.mode === 'dark'
       ? theme.palette.background.paper

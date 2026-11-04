@@ -38,6 +38,7 @@ const samplesQuery = gql`
 const previewQuery = gql`
   query previewSlackAlertTemplate($input: PreviewSlackAlertTemplateInput!) {
     previewSlackAlertTemplate(input: $input) {
+      color
       title
       text
       truncated
@@ -76,7 +77,11 @@ const updateMutation = gql`
 `
 
 const ctx = { additionalTypenames: ['SlackAlertTemplate'] }
-const mono = { fontFamily: 'monospace', fontSize: '0.85rem' }
+// --goalert-mono is set by the Playbook appearance; otherwise plain monospace.
+const mono = {
+  fontFamily: 'var(--goalert-mono, monospace)',
+  fontSize: '0.85rem',
+}
 
 function useDebounced<T>(value: T, ms: number): T {
   const [debounced, setDebounced] = useState(value)

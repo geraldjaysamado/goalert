@@ -30,7 +30,9 @@ Alertmanager ──webhook──▶ GoAlert integration key ──▶ alert (+ A
   | Delete while another admin assigns the template         | Whichever commits second is validated against the first. Deleting an assigned template, or assigning a deleted one, is rejected.                                                                                                                                                                                |
   | Two admins set the **same service's** template          | Last write wins. Both are explicit choices for the same field, so there is no revision check here.                                                                                                                                                                                                              |
 
-- **Unchanged:** Alertmanager ingestion and deduplication, escalation, Acknowledge/Close buttons, thread replies and status updates, dashboard/runbook buttons, and manual or non-Alertmanager alerts. Only the title and body text of the main Slack message change.
+- **Unchanged:** Alertmanager ingestion and deduplication, escalation, Acknowledge/Close buttons, thread replies and status updates, dashboard/runbook actions. Assigned templates also show a blue status bar for unacknowledged INFO alerts; acknowledged stays amber and resolved stays green. Unassigned services and rendering fallbacks keep the existing colours. The preview uses the delivery colour.
+
+The Infrastructure — Clear example uses the native dashboard button without a duplicate Link line. The button defaults to **Grafana Dashboard**; an explicit dashboard_label annotation still overrides it. Resource-specific links remain beside affected resources when a group has different dashboard URLs.
 
 ## Using it
 
@@ -113,8 +115,8 @@ Cluster: pb-nonprod
 Namespace: nonprod-exporters
 Workload: pb-devtest-redis-exporter (Deployment)
 State: 0 of 1 replicas available
-Next check: Pod readiness and recent events
-Link: Open in Grafana
+Description: Deployment nonprod-exporters/pb-devtest-redis-exporter has no available replicas.
+[Grafana Dashboard button]
 ```
 
 What it shows, and from where (lines appear only when the value exists):
@@ -129,20 +131,23 @@ What it shows, and from where (lines appear only when the value exists):
 | PVC / Node | `persistentvolumeclaim` / `node`                                                                                                                                                                                             |
 | Target     | `job` (+ `instance`), only when no resource label above is present                                                                                                                                                           |
 | State      | annotation `state`, else `value_used` (`Last reported state` when resolved)                                                                                                                                                  |
-| Details    | annotation `description` (if different from `summary`)                                                                                                                                                                       |
-| Next check | annotation `next_check`, else "follow the runbook" when `runbook_url` exists (hidden when resolved)                                                                                                                          |
-| Link       | annotation `dashboard_url` (+ `dashboard_label`)                                                                                                                                                                             |
+| Description | annotation `description` (omitted when it repeats `summary` or the state)                                                                                                                                                                       |
+| Dashboard button | annotation `dashboard_url` (+ `dashboard_label`)                                                                                                                                                                             |
 
 **kube-state-metrics:** when `exported_namespace` is present, the plain `namespace`, `pod`, `container`, `node`, `instance` and `job` labels describe the kube-state-metrics scraper, not the affected object. The template then uses only the `exported_*` values for the affected resource.
 
 **Layouts:**
 
 - **One alert received and none left out:** the detailed lines above.
-- **Grouped, or any left out upstream:** "_Affected resources (total; N received)_", then one line per received alert: namespace / kind name — state, plus its own summary or dashboard link if it differs from the common one. As many lines are listed as fit. Then, as applicable:
+- **Grouped, or any left out upstream:** "_Affected resources (total; N received)_", then one line per received alert: namespace / kind name — state, plus its own summary or dashboard link if it differs from the common one. A different description appears directly beneath that resource; a shared description appears once below the list. As many lines are listed as fit. Then, as applicable:
   - "…and N more received alerts not shown (Slack length limit)" with a GoAlert alert link.
   - "Alertmanager left out N more alerts… GoAlert has no details for them", with **View the group in Alertmanager** only when `externalURL` is valid. That URL comes from Alertmanager's `--web.external-url`; if it is an in-cluster address, Slack users may not be able to open it.
 - **`metadata-only` / `unreadable`:** a neutral note (no cause claimed) that only the stored labels are shown and that a grouped notification may cover more than one resource, then the detailed lines built from `.AlertMeta`, then a GoAlert link.
-- **`none` (ordinary alerts):** details, plus resource lines when the alert's metadata has resource labels. No caveat note.
+- **`none` (ordinary alerts):** the alert details appear as **Description**, plus resource lines when its metadata has resource labels. No caveat note.
+
+**Description:** write a short, factual explanation of the condition. Avoid repeating the title or state. Missing descriptions are omitted. The example does not display `next_check` or a generic runbook instruction; valid runbook buttons are still available.
+
+Updating this built-in example does not rewrite templates already saved in the database. Existing saved templates must be updated separately; no service assignment is changed automatically.
 
 **Not inferred:** replica counts, durations and healthy values are never computed or assumed. They appear only if an annotation provides them.
 
@@ -153,9 +158,9 @@ annotations:
   summary: Exporter is not ready # readable title (instead of the rule name)
   state: >- # concrete current state
     {{ $value }} available (desired: see dashboard)
-  next_check: Pod readiness and recent events # what to look at first
+  description: Deployment has no available replicas. # concise explanation of the condition
   dashboard_url: https://grafana.example/d/<uid>?var-namespace={{ $labels.exported_namespace }}&var-workload={{ $labels.deployment }}
-  dashboard_label: Open workload in Grafana
+  dashboard_label: Grafana Dashboard
   runbook_url: https://runbooks.example/exporter-not-ready
 ```
 

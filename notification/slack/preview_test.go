@@ -57,6 +57,8 @@ func renderSample(t *testing.T, s slacktmpl.Sample, state notification.AlertStat
 	p, err := PreviewAlertTemplate(previewCfgCtx(), e.Title, e.Text, s, state)
 	require.NoError(t, err)
 	assertWellFormed(t, s.ID, p)
+	assert.NotContains(t, p.Text, "Next check", s.ID)
+	assert.NotContains(t, p.Text, "*Link:*", s.ID)
 	return p
 }
 
@@ -85,24 +87,25 @@ func TestInfrastructureClear_Deployment(t *testing.T) {
 		"*Namespace:* nonprod-exporters",
 		"*Workload:* pb-devtest-redis-exporter (Deployment)",
 		"*State:* 0 of 1 replicas available",
-		"*Details:* Deployment nonprod-exporters/pb-devtest-redis-exporter has no available replicas.",
-		"*Next check:* Pod readiness and recent events",
-		"*Link:* <https://grafana.example.com/d/workload?var-namespace=nonprod-exporters&var-workload=pb-devtest-redis-exporter|Open in Grafana>",
+		"*Description:* Deployment nonprod-exporters/pb-devtest-redis-exporter has no available replicas.",
 	}, "\n"), p.Text)
 	// Scraper (kube-state-metrics) labels are not the affected resource.
 	assert.NotContains(t, p.Text, "monitoring")
 	assert.NotContains(t, p.Text, "kube-state-metrics")
 	assert.False(t, p.Truncated)
 	require.Len(t, p.Buttons, 1)
+	assert.Equal(t, "Grafana Dashboard", p.Buttons[0].Label)
 }
 
 func TestInfrastructureClear_Statuses(t *testing.T) {
-	p := previewSample(t, "deployment", notification.AlertStateAcknowledged)
+	s := sampleData(t, "deployment")
+	s.Alertmanager.Alerts[0].Annotations["next_check"] = "Legacy troubleshooting hint"
+	p := renderSample(t, s, notification.AlertStateAcknowledged)
 	assert.Equal(t, "CRITICAL — Exporter is not ready", p.Title)
 	assert.Contains(t, p.Text, "*State:* 0 of 1 replicas available")
-	assert.Contains(t, p.Text, "*Next check:*")
+	assert.Contains(t, p.Text, "*Description:* Deployment nonprod-exporters/pb-devtest-redis-exporter has no available replicas.")
 
-	p = previewSample(t, "deployment", notification.AlertStateClosed)
+	p = renderSample(t, s, notification.AlertStateClosed)
 	assert.Equal(t, "RESOLVED — Exporter is not ready", p.Title)
 	assert.Contains(t, p.Text, "*Last reported state:* 0 of 1 replicas available")
 	assert.NotContains(t, p.Text, "Next check")
@@ -111,9 +114,9 @@ func TestInfrastructureClear_Statuses(t *testing.T) {
 func TestInfrastructureClear_ResourceKinds(t *testing.T) {
 	cases := map[string][]string{
 		"statefulset": {"*Namespace:* nonprod-data", "*Workload:* redis-master (StatefulSet)", "*State:* Ready replicas: 2"},
-		"daemonset":   {"*Namespace:* kube-system", "*Workload:* aws-node (DaemonSet)", "*Details:* Some aws-node pods are not scheduled."},
+		"daemonset":   {"*Namespace:* kube-system", "*Workload:* aws-node (DaemonSet)", "*Description:* Some aws-node pods are not scheduled."},
 		"pvc":         {"*Namespace:* nonprod-data", "*PVC:* data-redis-master-0", "*Node:* ip-10-0-3-21.ec2.internal", "*State:* 3% free"},
-		"node":        {"*Node:* ip-10-0-3-21.ec2.internal", "*Next check:* follow the runbook"},
+		"node":        {"*Node:* ip-10-0-3-21.ec2.internal", "*Description:* The node is not reporting a Ready condition."},
 	}
 	for id, want := range cases {
 		t.Run(id, func(t *testing.T) {
@@ -134,7 +137,14 @@ func TestInfrastructureClear_GroupedListsEveryResource(t *testing.T) {
 	assert.Contains(t, p.Text, "• nonprod-apps / Pod api-7f9c-1 — 4 restarts in 10 minutes")
 	assert.Contains(t, p.Text, "• nonprod-apps / Pod api-7f9c-2 — 6 restarts in 10 minutes")
 	assert.Contains(t, p.Text, "• nonprod-apps / Pod worker-5d2b-1 — 3 restarts in 10 minutes")
-	assert.Contains(t, p.Text, "*Next check:* Container logs and last termination reason")
+	assert.Contains(t, p.Text, "*Description:* Container app is repeatedly restarting.")
+	assert.Equal(t, 1, strings.Count(p.Text, "*Description:*"), "shared description appears once")
+
+	// Different descriptions stay beside the affected resource.
+	s := sampleData(t, "pods-grouped")
+	s.Alertmanager.Alerts[0].Annotations = slacktmpl.KV{"summary": "Pod is crash looping", "description": "The API container exits before becoming ready."}
+	p = renderSample(t, s, notification.AlertStateUnacknowledged)
+	assert.Contains(t, p.Text, "Pod api-7f9c-1\n  *Description:* The API container exits before becoming ready.")
 	assert.NotContains(t, p.Text, "not shown")
 	assert.NotContains(t, p.Text, "left out")
 
@@ -245,7 +255,7 @@ func TestInfrastructureClear_MetadataOnly(t *testing.T) {
 		} else {
 			assert.Equal(t, "CRITICAL — Exporter is not ready", p.Title, "no count: the number of alerts is unknown")
 			assert.Contains(t, p.Text, "*State:* 0 of 1 replicas available")
-			assert.Contains(t, p.Text, "*Next check:* Pod readiness and recent events")
+			assert.Contains(t, p.Text, "*Description:* Deployment nonprod-exporters/pb-devtest-redis-exporter has no available replicas.")
 		}
 		assert.Contains(t, p.Text, "_Per-alert details are not available for this alert, so only its stored labels are shown.")
 		assert.Contains(t, p.Text, "may cover more than one resource")
@@ -296,7 +306,7 @@ func TestInfrastructureClear_MalformedPayloadUsesFlattenedMetadata(t *testing.T)
 func TestInfrastructureClear_ManualAndMissingFields(t *testing.T) {
 	p := previewSample(t, "manual", notification.AlertStateUnacknowledged)
 	assert.Equal(t, "ALERT — Database failover test", p.Title)
-	assert.Equal(t, "*Details:* Created manually from the GoAlert UI.", p.Text)
+	assert.Equal(t, "*Description:* Created manually from the GoAlert UI.", p.Text)
 	assert.Empty(t, p.Buttons)
 
 	s := slacktmpl.Sample{Summary: "Something", Alertmanager: &slacktmpl.AlertmanagerData{
@@ -307,10 +317,20 @@ func TestInfrastructureClear_ManualAndMissingFields(t *testing.T) {
 	assert.Equal(t, "ALERT — SomethingHappened", p.Title)
 	assert.Empty(t, p.Text)
 
+	// Blank descriptions do not produce empty labelled lines.
+	s.Alertmanager.Alerts[0].Annotations = slacktmpl.KV{"description": " \n\t "}
+	assert.Empty(t, renderSample(t, s, notification.AlertStateUnacknowledged).Text)
+
 	// Unsafe dashboard URL is not rendered as a link.
 	s.Alertmanager.Alerts[0].Annotations = slacktmpl.KV{"dashboard_url": "javascript:alert(1)", "state": "a <b> & c"}
 	p = renderSample(t, s, notification.AlertStateUnacknowledged)
 	assert.Equal(t, "*State:* a &lt;b&gt; &amp; c", p.Text)
+
+	// A description that repeats the title or state adds no information.
+	s.Alertmanager.Alerts[0].Annotations = slacktmpl.KV{"summary": "SomethingHappened", "description": "SomethingHappened"}
+	assert.Empty(t, renderSample(t, s, notification.AlertStateUnacknowledged).Text)
+	s.Alertmanager.Alerts[0].Annotations = slacktmpl.KV{"state": "Not ready", "description": "Not ready"}
+	assert.Equal(t, "*State:* Not ready", renderSample(t, s, notification.AlertStateUnacknowledged).Text)
 }
 
 func TestInfrastructureClear_AllSamplesAllStates(t *testing.T) {
@@ -338,7 +358,7 @@ func TestInfrastructureClear_OrdinaryAlertWithMetadata(t *testing.T) {
 		title, text, buttons, err := renderAlertTemplates(ctx, 7, "Generic API alert", "Raised by the generic API.", assignedSvc, "svc", "generic", map[string]string{"owner": "infra"}, "log", st)
 		require.NoError(t, err)
 		assert.Equal(t, wantTitle, title)
-		assert.Equal(t, "*Details:* Raised by the generic API.", text)
+		assert.Equal(t, "*Description:* Raised by the generic API.", text)
 		assert.Empty(t, buttons)
 	}
 
@@ -350,7 +370,7 @@ func TestInfrastructureClear_OrdinaryAlertWithMetadata(t *testing.T) {
 
 	p := previewSample(t, "generic-metadata", notification.AlertStateUnacknowledged)
 	assert.Equal(t, "ALERT — Generic API alert", p.Title)
-	assert.Equal(t, "*Details:* Raised by the generic API.", p.Text)
+	assert.Equal(t, "*Description:* Raised by the generic API.", p.Text)
 }
 
 func TestTemplateData_AlertmanagerDataState(t *testing.T) {
@@ -423,7 +443,7 @@ func TestInfrastructureClear_MixedNameGroupSizeFallback(t *testing.T) {
 		_, text, _, err = renderAlertTemplates(ctx, 7, "Something", "Raised elsewhere.", assignedSvc, "svc", src,
 			map[string]string{"alertname": "Something", "namespace": "apps"}, "log", notification.AlertStateUnacknowledged)
 		require.NoError(t, err)
-		assert.Equal(t, "*Namespace:* apps\n*Details:* Raised elsewhere.", text, src)
+		assert.Equal(t, "*Namespace:* apps\n*Description:* Raised elsewhere.", text, src)
 	}
 }
 

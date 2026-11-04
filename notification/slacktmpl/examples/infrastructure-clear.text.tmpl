@@ -37,13 +37,8 @@
 {{ end -}}
 {{- with coalesce .A.state .A.value_used }}*{{ if $.Closed }}Last reported state{{ else }}State{{ end }}:* {{ slackEscape (truncate 300 .) }}
 {{ end -}}
-{{- with .A.description }}{{ if ne . $.A.summary }}*Details:* {{ slackEscape (truncate 500 .) }}
+{{- with trimSpace .A.description }}{{ if and (ne . (trimSpace $.A.summary)) (ne . (trimSpace (coalesce $.A.state $.A.value_used))) }}*Description:* {{ slackEscape (truncate 500 .) }}
 {{ end }}{{ end -}}
-{{- if not .Closed }}{{ with .A.next_check }}*Next check:* {{ slackEscape (truncate 300 .) }}
-{{ else }}{{ if safeURL .A.runbook_url }}*Next check:* follow the runbook
-{{ end }}{{ end }}{{ end -}}
-{{- with safeURL .A.dashboard_url }}*Link:* <{{ . }}|{{ slackEscape (truncate 80 (coalesce $.A.dashboard_label "Open in Grafana")) }}>
-{{ end -}}
 {{- end -}}
 
 {{- $closed := eq .GoAlertStatus "closed" -}}
@@ -78,15 +73,15 @@ _{{ if eq .AlertmanagerDataState "unreadable" }}The stored alert payload could n
 {{- with .Annotations.summary }}{{ if ne . $.CommonAnnotations.summary }} — {{ slackEscape (truncate 150 .) }}{{ end }}{{ end -}}
 {{- if and (eq .Status "resolved") (not $closed) }} (resolved){{ end -}}
 {{- with safeURL .Annotations.dashboard_url }}{{ if ne . $.CommonAnnotations.dashboard_url }} <{{ . }}|Grafana>{{ end }}{{ end }}
+{{ $description := trimSpace .Annotations.description -}}
+{{ if and $description (ne $description (trimSpace $.CommonAnnotations.description)) (ne $description (trimSpace .Annotations.summary)) (ne $description (trimSpace (coalesce .Annotations.state .Annotations.value_used))) }}  *Description:* {{ slackEscape (truncate 300 $description) }}
+{{ end -}}
 {{ end -}}
 {{- $notShown := sub $received (len $shown) -}}
 {{- if gt $notShown 0 }}…and {{ $notShown }} more received alert{{ if gt $notShown 1 }}s{{ end }} not shown (Slack length limit). <{{ .AlertURL }}|Open the alert in GoAlert>
 {{ end -}}
 {{- if gt .TruncatedAlerts 0 }}Alertmanager left out {{ .TruncatedAlerts }} more alert{{ if gt .TruncatedAlerts 1 }}s{{ end }} from this notification (max_alerts), so GoAlert has no details for {{ if gt .TruncatedAlerts 1 }}them{{ else }}it{{ end }}.{{ with .AlertmanagerAlertsURL }} <{{ . }}|View the group in Alertmanager>{{ end }}
 {{ end -}}
-{{- if not $closed }}{{ with .CommonAnnotations.next_check }}*Next check:* {{ slackEscape (truncate 300 .) }}
-{{ else }}{{ if safeURL .CommonAnnotations.runbook_url }}*Next check:* follow the runbook
-{{ end }}{{ end }}{{ end -}}
-{{- with safeURL .CommonAnnotations.dashboard_url }}*Link:* <{{ . }}|{{ slackEscape (truncate 80 (coalesce $.CommonAnnotations.dashboard_label "Open in Grafana")) }}>
-{{ end -}}
+{{- with trimSpace .CommonAnnotations.description }}{{ if and (ne . (trimSpace $.CommonAnnotations.summary)) (ne . (trimSpace (coalesce $.CommonAnnotations.state $.CommonAnnotations.value_used))) }}*Description:* {{ slackEscape (truncate 500 .) }}
+{{ end }}{{ end -}}
 {{- end -}}

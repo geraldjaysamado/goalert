@@ -767,6 +767,7 @@ type ComplexityRoot struct {
 
 	SlackAlertTemplatePreview struct {
 		Buttons   func(childComplexity int) int
+		Color     func(childComplexity int) int
 		Text      func(childComplexity int) int
 		Title     func(childComplexity int) int
 		Truncated func(childComplexity int) int
@@ -4579,6 +4580,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.SlackAlertTemplatePreview.Buttons(childComplexity), true
+	case "SlackAlertTemplatePreview.color":
+		if e.ComplexityRoot.SlackAlertTemplatePreview.Color == nil {
+			break
+		}
+
+		return e.ComplexityRoot.SlackAlertTemplatePreview.Color(childComplexity), true
 	case "SlackAlertTemplatePreview.text":
 		if e.ComplexityRoot.SlackAlertTemplatePreview.Text == nil {
 			break
@@ -6441,6 +6448,8 @@ func (ec *executionContext) childFields_SlackAlertTemplateExample(ctx context.Co
 
 func (ec *executionContext) childFields_SlackAlertTemplatePreview(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 	switch field.Name {
+	case "color":
+		return ec.fieldContext_SlackAlertTemplatePreview_color(ctx, field)
 	case "title":
 		return ec.fieldContext_SlackAlertTemplatePreview_title(ctx, field)
 	case "text":
@@ -22297,6 +22306,29 @@ func (ec *executionContext) _SlackAlertTemplateExample_text(ctx context.Context,
 }
 func (ec *executionContext) fieldContext_SlackAlertTemplateExample_text(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	return graphql.NewScalarFieldContext("SlackAlertTemplateExample", field, false, false, errors.New("field of type String does not have child fields"))
+}
+
+func (ec *executionContext) _SlackAlertTemplatePreview_color(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreview) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return ec.fieldContext_SlackAlertTemplatePreview_color(ctx, field)
+		},
+		func(ctx context.Context) (any, error) {
+			return obj.Color, nil
+		},
+		nil,
+		func(ctx context.Context, selections ast.SelectionSet, v string) graphql.Marshaler {
+			return ec.marshalNString2string(ctx, selections, v)
+		},
+		true,
+		true,
+	)
+}
+func (ec *executionContext) fieldContext_SlackAlertTemplatePreview_color(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	return graphql.NewScalarFieldContext("SlackAlertTemplatePreview", field, false, false, errors.New("field of type String does not have child fields"))
 }
 
 func (ec *executionContext) _SlackAlertTemplatePreview_title(ctx context.Context, field graphql.CollectedField, obj *SlackAlertTemplatePreview) (ret graphql.Marshaler) {
@@ -38620,6 +38652,11 @@ func (ec *executionContext) _SlackAlertTemplatePreview(ctx context.Context, sel 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("SlackAlertTemplatePreview")
+		case "color":
+			out.Values[i] = ec._SlackAlertTemplatePreview_color(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "title":
 			out.Values[i] = ec._SlackAlertTemplatePreview_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

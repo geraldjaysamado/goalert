@@ -21,6 +21,7 @@ type PreviewButton struct {
 
 // Preview is the rendered output of a template. Nothing is sent.
 type Preview struct {
+	Color   string
 	Title   string
 	Text    string
 	Buttons []PreviewButton
@@ -71,7 +72,7 @@ func PreviewAlertTemplate(ctx context.Context, titleTemplate, textTemplate strin
 		return Preview{}, err
 	}
 
-	res := Preview{Title: title, Text: text, Truncated: hardCut}
+	res := Preview{Color: libraryAlertColor(data, state), Title: title, Text: text, Truncated: hardCut}
 	for _, b := range buttons {
 		res.Buttons = append(res.Buttons, PreviewButton{Label: b.Label, URL: b.URL})
 	}

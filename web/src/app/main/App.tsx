@@ -16,10 +16,13 @@ import makeStyles from '@mui/styles/makeStyles'
 import { useIsWidthDown } from '../util/useWidth'
 import { isIOS } from '../util/browsers'
 import UserSettingsPopover from './components/UserSettingsPopover'
-import { Theme } from '@mui/material/styles'
+import { Theme, useTheme } from '@mui/material/styles'
 import AppRoutes from './AppRoutes'
 import { useURLKey } from '../actions'
 import NavBar from './NavBar'
+import PlaybookNavBar from './PlaybookNavBar'
+import { useAppearance } from '../theme/useAppearance'
+import { playbookTokens } from '../theme/playbook'
 import AuthLink from './components/AuthLink'
 import { useExpFlag } from '../util/useExpFlag'
 import { NotificationProvider } from './SnackbarNotification'
@@ -53,6 +56,9 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }))
 
+// Sidebar width for the Playbook appearance (matches the reference console).
+const playbookNavWidth = '236px'
+
 export default function App(): React.JSX.Element {
   const [analyticsID] = useConfigValue('General.GoogleAnalyticsID') as [string]
 
@@ -63,7 +69,20 @@ export default function App(): React.JSX.Element {
   const classes = useStyles()
   const [showMobile, setShowMobile] = useState(false)
   const fullScreen = useIsWidthDown('md')
-  const marginLeft = fullScreen ? 0 : drawerWidth
+  const theme = useTheme()
+  const isPlaybook = useAppearance() === 'playbook'
+  const navWidth = isPlaybook ? playbookNavWidth : drawerWidth
+  const marginLeft = fullScreen ? 0 : navWidth
+  const navPaperSx = isPlaybook
+    ? {
+        backgroundColor: playbookTokens(theme.palette.mode).nav,
+        backgroundImage: 'none',
+        border: 'none',
+        borderRadius: 0,
+        boxShadow: 'none',
+      }
+    : undefined
+  const nav = isPlaybook ? <PlaybookNavBar /> : <NavBar />
   const urlKey = useURLKey()
   const hasExampleFlag = useExpFlag('example')
 
@@ -81,6 +100,11 @@ export default function App(): React.JSX.Element {
             <AppBar
               position='fixed'
               className={classes.appBar}
+              style={
+                isPlaybook && !fullScreen
+                  ? { width: `calc(100% - ${playbookNavWidth})` }
+                  : undefined
+              }
               data-cy='app-bar'
               data-cy-format={cyFormat}
             >
@@ -101,8 +125,11 @@ export default function App(): React.JSX.Element {
             </AppBar>
 
             <Hidden mdDown>
-              <LazyWideSideBar>
-                <NavBar />
+              <LazyWideSideBar
+                width={isPlaybook ? playbookNavWidth : undefined}
+                paperSx={navPaperSx}
+              >
+                {nav}
               </LazyWideSideBar>
             </Hidden>
             <Hidden mdUp>
@@ -114,8 +141,13 @@ export default function App(): React.JSX.Element {
                 SlideProps={{
                   unmountOnExit: true,
                 }}
+                PaperProps={
+                  isPlaybook
+                    ? { sx: { ...navPaperSx, width: '264px' } }
+                    : undefined
+                }
               >
-                <NavBar />
+                {nav}
               </SwipeableDrawer>
             </Hidden>
 

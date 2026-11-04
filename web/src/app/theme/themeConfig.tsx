@@ -19,6 +19,14 @@ import {
   Scheme,
 } from '@material/material-color-utilities'
 import { blueGrey } from '@mui/material/colors'
+import GlobalStyles from '@mui/material/GlobalStyles'
+import {
+  Appearance,
+  playbookFont,
+  playbookMono,
+  playbookThemeOptions,
+  playbookTokens,
+} from './playbook'
 
 interface ThemeProviderProps {
   children: ReactNode
@@ -30,6 +38,8 @@ interface ThemeContextParams {
   setThemeMode: (newMode: ThemeModeOption) => void
   sourceColor: string
   setSourceColor: (newColor: string) => void
+  appearance: Appearance
+  setAppearance: (newAppearance: Appearance) => void
 }
 
 export type MUIThemeMode = 'dark' | 'light'
@@ -40,6 +50,8 @@ export const ThemeContext = React.createContext<ThemeContextParams>({
   setThemeMode: (): void => {},
   sourceColor: '',
   setSourceColor: (): void => {},
+  appearance: 'existing',
+  setAppearance: (): void => {},
 })
 ThemeContext.displayName = 'ThemeContext'
 
@@ -97,7 +109,11 @@ function getPalette(
   }
 }
 
-function makeTheme(mode: MUIThemeMode, sourceColor: string): Theme {
+function makeTheme(
+  mode: MUIThemeMode,
+  sourceColor: string,
+  appearance: Appearance = 'existing',
+): Theme {
   let testOverrides = {}
   if (isCypress) {
     testOverrides = {
@@ -106,6 +122,10 @@ function makeTheme(mode: MUIThemeMode, sourceColor: string): Theme {
         create: () => 'none',
       },
     }
+  }
+
+  if (appearance === 'playbook') {
+    return createTheme({ ...playbookThemeOptions(mode), ...testOverrides })
   }
 
   return createTheme({
@@ -159,9 +179,52 @@ function loadThemeColor(): string {
   return validHexColor(savedColor) ? (savedColor as string) : blueGrey[500]
 }
 
+// The appearance (Existing / Playbook) is stored separately from the
+// light/dark/system mode and the accent color, so switching it never
+// changes those saved preferences.
+function saveAppearance(appearance: Appearance): void {
+  try {
+    window.localStorage?.setItem('appearance', appearance)
+  } catch {
+    // storage unavailable (e.g. private mode); keep the in-memory choice
+  }
+}
+function loadAppearance(): Appearance {
+  try {
+    return window.localStorage?.getItem('appearance') === 'playbook'
+      ? 'playbook'
+      : 'existing'
+  } catch {
+    return 'existing'
+  }
+}
+
+function PlaybookGlobalStyles(props: { mode: MUIThemeMode }): JSX.Element {
+  const t = playbookTokens(props.mode)
+  return (
+    <GlobalStyles
+      styles={{
+        ':root': { '--goalert-mono': playbookMono, colorScheme: props.mode },
+        body: {
+          fontFamily: playbookFont,
+          fontSize: 14,
+          lineHeight: 1.45,
+          color: t.ink,
+          backgroundColor: t.page,
+          WebkitFontSmoothing: 'antialiased',
+        },
+        'code, kbd, pre, samp': { fontFamily: playbookMono },
+        ':focus-visible': { outlineColor: t.soft },
+      }}
+    />
+  )
+}
+
 export function ThemeProvider(props: ThemeProviderProps): JSX.Element {
   const [savedThemeMode, setSavedThemeMode] = useState(loadTheme())
   const [sourceColor, setSourceColor] = useState(loadThemeColor())
+  const [appearance, setAppearanceState] =
+    useState<Appearance>(loadAppearance())
 
   // used for watching if system theme mode changes
   const [systemThemeMode, setSystemThemeMode] = useState<MUIThemeMode>(
@@ -190,7 +253,10 @@ export function ThemeProvider(props: ThemeProviderProps): JSX.Element {
   // Use deferred and memoized values so we don't regenerate the entire theme on every render/change event
   const defMode = useDeferredValue(mode)
   const defSrc = useDeferredValue(sourceColor)
-  const theme = useMemo(() => makeTheme(defMode, defSrc), [defMode, defSrc])
+  const theme = useMemo(
+    () => makeTheme(defMode, defSrc, appearance),
+    [defMode, defSrc, appearance],
+  )
 
   return (
     <ThemeContext.Provider
@@ -205,9 +271,17 @@ export function ThemeProvider(props: ThemeProviderProps): JSX.Element {
           setSourceColor(newColor)
           saveThemeColor(newColor)
         },
+        appearance,
+        setAppearance: (newAppearance: Appearance) => {
+          setAppearanceState(newAppearance)
+          saveAppearance(newAppearance)
+        },
       }}
     >
-      <MUIThemeProvider theme={theme}>{props.children}</MUIThemeProvider>
+      <MUIThemeProvider theme={theme}>
+        {appearance === 'playbook' && <PlaybookGlobalStyles mode={defMode} />}
+        {props.children}
+      </MUIThemeProvider>
     </ThemeContext.Provider>
   )
 }

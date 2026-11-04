@@ -22,6 +22,8 @@ type Routes =
 
 // todo: not needed once appbar is using same color prop for dark/light modes
 const getContrastColor = (theme: Theme): string => {
+  // Playbook appearance: the app bar uses the paper color, so use text color.
+  if (theme.goalertAppearance === 'playbook') return theme.palette.text.primary
   return theme.palette.getContrastText(
     theme.palette.mode === 'dark'
       ? theme.palette.background.paper
@@ -93,7 +95,12 @@ export default function BreadCrumb(props: BreadCrumbProps): React.JSX.Element {
       component='h6'
       sx={{
         padding: '0 4px 0 4px',
-        fontSize: '1.25rem',
+        fontSize: (t: Theme) =>
+          t.goalertAppearance === 'playbook' ? '1.1875rem' : '1.25rem',
+        fontWeight: (t: Theme) =>
+          t.goalertAppearance === 'playbook' ? 600 : undefined,
+        letterSpacing: (t: Theme) =>
+          t.goalertAppearance === 'playbook' ? '-0.01em' : undefined,
         color: getContrastColor,
       }}
     >

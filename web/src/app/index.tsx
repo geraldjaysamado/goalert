@@ -2,11 +2,18 @@ import React, { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider as ReduxProvider } from 'react-redux'
 import { ApolloProvider } from '@apollo/client'
-import { StyledEngineProvider } from '@mui/material/styles'
 import { GOALERT_VERSION as version, nonce, pathPrefix } from './env'
-import { ThemeProvider } from './theme/themeConfig'
+import StyleProviders from './StyleProviders'
 import { GraphQLClient } from './apollo'
 import './styles'
+// Playbook appearance fonts (SIL OFL 1.1), bundled locally. The browser only
+// downloads a font file once text actually uses that face.
+import '@fontsource/inter/latin-400.css'
+import '@fontsource/inter/latin-500.css'
+import '@fontsource/inter/latin-600.css'
+import '@fontsource/inter/latin-700.css'
+import '@fontsource/jetbrains-mono/latin-400.css'
+import '@fontsource/jetbrains-mono/latin-500.css'
 import App from './main/App'
 import store from './reduxStore'
 import { ConfigProvider } from './util/RequireConfig'
@@ -20,7 +27,6 @@ import { Settings } from 'luxon'
 import RequireAuth from './main/RequireAuth'
 import Login from './main/components/Login'
 import createCache from '@emotion/cache'
-import { CacheProvider } from '@emotion/react'
 
 Settings.throwOnInvalid = true
 
@@ -58,25 +64,21 @@ const cache = createCache({
 
 root.render(
   <StrictMode>
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider>
-        <CacheProvider value={cache}>
-          <ApolloProvider client={GraphQLClient}>
-            <ReduxProvider store={store}>
-              <Router base={pathPrefix}>
-                <URQLProvider value={urqlClient}>
-                  <NewVersionCheck />
-                  <RequireAuth fallback={<Login />}>
-                    <ConfigProvider>
-                      <App />
-                    </ConfigProvider>
-                  </RequireAuth>
-                </URQLProvider>
-              </Router>
-            </ReduxProvider>
-          </ApolloProvider>
-        </CacheProvider>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <StyleProviders cache={cache}>
+      <ApolloProvider client={GraphQLClient}>
+        <ReduxProvider store={store}>
+          <Router base={pathPrefix}>
+            <URQLProvider value={urqlClient}>
+              <NewVersionCheck />
+              <RequireAuth fallback={<Login />}>
+                <ConfigProvider>
+                  <App />
+                </ConfigProvider>
+              </RequireAuth>
+            </URQLProvider>
+          </Router>
+        </ReduxProvider>
+      </ApolloProvider>
+    </StyleProviders>
   </StrictMode>,
 )

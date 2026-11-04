@@ -99,6 +99,7 @@ input PreviewSlackAlertTemplateInput {
 }
 
 type SlackAlertTemplatePreview {
+  color: String!
   title: String!
   text: String!
   buttons: [SlackAlertTemplatePreviewButton!]!

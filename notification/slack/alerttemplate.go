@@ -218,13 +218,18 @@ func assignedTemplate(ctx context.Context, cfg config.Config, serviceID string) 
 }
 
 func renderAlertTemplates(ctx context.Context, alertID int, summary, details, serviceID, serviceName, source string, meta map[string]string, logEntry string, state notification.AlertState) (title, text string, buttons []alertTemplateButton, err error) {
+	title, text, buttons, _, err = renderAlertMessage(ctx, alertID, summary, details, serviceID, serviceName, source, meta, logEntry, state)
+	return
+}
+
+func renderAlertMessage(ctx context.Context, alertID int, summary, details, serviceID, serviceName, source string, meta map[string]string, logEntry string, state notification.AlertState) (title, text string, buttons []alertTemplateButton, color string, err error) {
 	cfg := config.FromContext(ctx)
 	data := templateData(ctx, alertID, summary, details, serviceID, serviceName, source, meta, logEntry, state)
 
 	if tmpl, ok := assignedTemplate(ctx, cfg, serviceID); ok {
 		title, text, buttons, _, err = renderLibraryTemplate(alertID, summary, tmpl.Title, tmpl.Text, data)
 		if err == nil {
-			return title, text, buttons, nil
+			return title, text, buttons, libraryAlertColor(data, state), nil
 		}
 		log.Log(log.WithFields(ctx, log.Fields{
 			"ServiceID":         serviceID,
@@ -244,7 +249,8 @@ func renderAlertTemplates(ctx context.Context, alertID int, summary, details, se
 			textTemplate = defaultRichTextTemplate
 		}
 	}
-	return renderTemplatePair(alertID, summary, titleTemplate, textTemplate, data, richEnabled)
+	title, text, buttons, err = renderTemplatePair(alertID, summary, titleTemplate, textTemplate, data, richEnabled)
+	return title, text, buttons, "", err
 }
 
 // renderTemplatePair renders a title/body pair. Behaviour for the shared
@@ -297,7 +303,15 @@ func renderLibraryTemplate(alertID int, summary, titleTemplate, textTemplate str
 	render := func(n int) (string, string, []alertTemplateButton, error) {
 		d := data
 		d.MaxListedAlerts = n
-		return renderTemplatePairRaw(alertID, summary, titleTemplate, textTemplate, d, true)
+		t, x, b, err := renderTemplatePairRaw(alertID, summary, titleTemplate, textTemplate, d, true)
+		if strings.TrimSpace(d.Meta["dashboard_label"]) == "" {
+			for i := range b {
+				if b[i].ActionID == alertDashboardActionID {
+					b[i].Label = "Grafana Dashboard"
+				}
+			}
+		}
+		return t, x, b, err
 	}
 	fits := func(s string) bool { return utf8.RuneCountInString(s) <= maxSlackTextLength }
 
@@ -350,4 +364,44 @@ func cutAtLine(text string, max int) string {
 		cut = cut[:open]
 	}
 	return strings.TrimSpace(cut)
+}
+
+// alertColor preserves lifecycle colours; informational firing alerts may override red.
+func alertColor(state notification.AlertState, override string) string {
+	switch state {
+	case notification.AlertStateClosed:
+		return colorClosed
+	case notification.AlertStateAcknowledged:
+		return colorAcked
+	case notification.AlertStateUnacknowledged:
+		if override == colorInfo {
+			return colorInfo
+		}
+		return colorUnacked
+	default:
+		return ""
+	}
+}
+
+// Only successfully rendered library templates use severity colours. Shared
+// formatting and error fallbacks retain their existing lifecycle colours.
+func libraryAlertColor(data slacktmpl.Data, state notification.AlertState) string {
+	isInfo := func(s string) bool { return strings.EqualFold(strings.TrimSpace(s), "info") }
+	if data.AlertmanagerDataState == "complete" {
+		if len(data.Alerts) == 0 {
+			return alertColor(state, "")
+		}
+		for _, a := range data.Alerts {
+			if !isInfo(a.Labels["severity"]) {
+				return alertColor(state, "")
+			}
+		}
+		// Unknown omitted alerts cannot be assumed informational.
+		if data.TruncatedAlerts > 0 && !isInfo(data.CommonLabels["severity"]) {
+			return alertColor(state, "")
+		}
+	} else if !isInfo(data.AlertMeta["severity"]) {
+		return alertColor(state, "")
+	}
+	return alertColor(state, colorInfo)
 }

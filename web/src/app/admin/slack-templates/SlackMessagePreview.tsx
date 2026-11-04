@@ -65,7 +65,7 @@ export default function SlackMessagePreview(props: {
   return (
     <Box
       sx={{
-        borderLeft: `4px solid ${statusColor[status]}`,
+        borderLeft: `4px solid ${preview.color || statusColor[status]}`,
         pl: 1.5,
         py: 0.5,
         typography: 'body2',

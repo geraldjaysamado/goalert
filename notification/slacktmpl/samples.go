@@ -67,14 +67,13 @@ func Samples() []Sample {
 		"summary":       "Exporter is not ready",
 		"description":   "Deployment nonprod-exporters/pb-devtest-redis-exporter has no available replicas.",
 		"state":         "0 of 1 replicas available",
-		"next_check":    "Pod readiness and recent events",
 		"dashboard_url": "https://grafana.example.com/d/workload?var-namespace=nonprod-exporters&var-workload=pb-devtest-redis-exporter",
 	}
 
 	podAlert := func(pod, restarts string) AlertmanagerAlert {
 		return AlertmanagerAlert{
 			Labels:      KV{"alertname": "KubePodCrashLooping", "severity": "warning", "cluster": "pb-nonprod", "namespace": "nonprod-apps", "pod": pod, "container": "app"},
-			Annotations: KV{"summary": "Pod is crash looping", "value_used": restarts + " restarts in 10 minutes", "next_check": "Container logs and last termination reason"},
+			Annotations: KV{"summary": "Pod is crash looping", "value_used": restarts + " restarts in 10 minutes", "description": "Container app is repeatedly restarting."},
 		}
 	}
 
@@ -115,7 +114,7 @@ func Samples() []Sample {
 			Summary: "Pod is crash looping", ServiceName: "EKS Infrastructure Nonprod",
 			Alertmanager: amData(
 				KV{"alertname": "KubePodCrashLooping", "severity": "warning", "cluster": "pb-nonprod", "namespace": "nonprod-apps", "container": "app"},
-				KV{"summary": "Pod is crash looping", "next_check": "Container logs and last termination reason"},
+				KV{"summary": "Pod is crash looping", "description": "Container app is repeatedly restarting."},
 				podAlert("api-7f9c-1", "4"), podAlert("api-7f9c-2", "6"), podAlert("worker-5d2b-1", "3"),
 			),
 		},
@@ -133,7 +132,7 @@ func Samples() []Sample {
 			Summary: "Node is not ready", ServiceName: "EKS Infrastructure Nonprod",
 			Alertmanager: func() *AlertmanagerData {
 				l := KV{"alertname": "KubeNodeNotReady", "severity": "critical", "cluster": "pb-nonprod", "node": "ip-10-0-3-21.ec2.internal", "job": "kube-state-metrics"}
-				a := KV{"summary": "Node is not ready", "runbook_url": "https://runbooks.example.com/kube-node-not-ready"}
+				a := KV{"summary": "Node is not ready", "description": "The node is not reporting a Ready condition.", "runbook_url": "https://runbooks.example.com/kube-node-not-ready"}
 				return amData(l, a, AlertmanagerAlert{Labels: l, Annotations: a})
 			}(),
 		},
@@ -162,6 +161,7 @@ func Samples() []Sample {
 					alerts = append(alerts, AlertmanagerAlert{
 						Labels: KV{"alertname": "KubePodNotReady", "severity": "warning", "cluster": "pb-nonprod", "namespace": "nonprod-very-long-namespace-name", "pod": pod},
 						Annotations: KV{
+							"description":   "The application health endpoint is returning HTTP 503.",
 							"summary":       "Pod is not ready",
 							"state":         "Not ready for longer than expected; readiness probe failing with HTTP 503 from the application health endpoint",
 							"dashboard_url": "https://grafana.example.com/d/pod-detail/kubernetes-pod-detail?orgId=1&var-namespace=nonprod-very-long-namespace-name&var-pod=" + pod,

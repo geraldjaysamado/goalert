@@ -23,6 +23,8 @@ import ReactGA from 'react-ga4'
 import { useConfigValue } from '../util/RequireConfig'
 import AlertFeedbackDialog from './components/AlertFeedbackDialog'
 import { Target } from 'web/src/schema'
+import { useAppearance } from '../theme/useAppearance'
+import AlertStatusBadge from '../theme/AlertStatusBadge'
 
 type AlertsListProps = {
   secondaryActions?: ReactElement
@@ -109,6 +111,7 @@ function getStatusFilter(s: string): string[] {
 
 export default function AlertsList(props: AlertsListProps): React.JSX.Element {
   const classes = useStyles()
+  const isPlaybook = useAppearance() === 'playbook'
 
   // event sent to Google Analytics
   const [event, setEvent] = useState('')
@@ -342,10 +345,41 @@ export default function AlertsList(props: AlertsListProps): React.JSX.Element {
             mapDataNode={(a) => ({
               id: a.id,
               status: getListItemStatus(a.status),
-              title: `${a.alertID}: ${a.status
-                .toUpperCase()
-                .replace('STATUS', '')}`,
-              subText: (serviceID ? '' : a.service.name + ': ') + a.summary,
+              ...(isPlaybook
+                ? {
+                    // Playbook: summary first, then a labelled status pill,
+                    // alert number and service.
+                    title: a.summary,
+                    subText: (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          flexWrap: 'wrap',
+                          alignItems: 'center',
+                          gap: 8,
+                          marginTop: 4,
+                        }}
+                      >
+                        <AlertStatusBadge status={a.status} />
+                        <span
+                          style={{
+                            fontFamily: 'var(--goalert-mono, monospace)',
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          #{a.alertID}
+                          {serviceID ? '' : ' · ' + a.service.name}
+                        </span>
+                      </span>
+                    ),
+                  }
+                : {
+                    title: `${a.alertID}: ${a.status
+                      .toUpperCase()
+                      .replace('STATUS', '')}`,
+                    subText:
+                      (serviceID ? '' : a.service.name + ': ') + a.summary,
+                  }),
               action: (
                 <ListItemText
                   className={classes.alertTimeContainer}

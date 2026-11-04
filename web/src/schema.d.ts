@@ -1207,6 +1207,7 @@ export interface SlackAlertTemplateExample {
 
 export interface SlackAlertTemplatePreview {
   buttons: SlackAlertTemplatePreviewButton[]
+  color: string
   text: string
   title: string
   truncated: boolean
